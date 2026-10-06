@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# local MongoDB data (npm run db:local)
+.mongo-data/
+
+# secrets
+.env
+.env.local
