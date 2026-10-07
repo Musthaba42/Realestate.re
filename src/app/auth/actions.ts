@@ -3,9 +3,11 @@
 import bcrypt from "bcryptjs";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from "@/lib/session";
+import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS, destination, safeNext, signSession } from "@/lib/session";
 import { normalizeIndianPhone } from "@/lib/format";
 import type { FormState } from "@/app/admin/actions";
 
@@ -14,25 +16,9 @@ function text(fd: FormData, key: string, max = 200): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 }
 
-/** Only allow redirects to pages on this site (never to another website). */
-function safeNext(raw: string): string | null {
-  return raw.startsWith("/") && !raw.startsWith("//") && !raw.includes("\\") ? raw : null;
-}
-
 async function startSession(user: { id: string; login: string; name: string; role: string }) {
   const token = await signSession({ uid: user.id, login: user.login, name: user.name, role: user.role === "admin" ? "admin" : "user" });
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
-}
-
-function destination(role: string, next: string | null): string {
-  if (role === "admin") return next?.startsWith("/admin") ? next : "/admin";
-  return next && !next.startsWith("/admin") && next !== "/login" && next !== "/signup" ? next : "/account";
+  (await cookies()).set(SESSION_COOKIE, token, SESSION_COOKIE_OPTIONS);
 }
 
 export async function loginAction(_prev: FormState, fd: FormData): Promise<FormState> {
@@ -84,6 +70,20 @@ export async function signupAction(_prev: FormState, fd: FormData): Promise<Form
   });
   await startSession(user);
   redirect(destination("user", safeNext(text(fd, "next", 300))));
+}
+
+/** Accounts made with Google have no mobile number yet; selling needs one. */
+export async function addPhoneAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const me = await getCurrentUser();
+  if (!me) return { error: "Please log in again." };
+  if (me.role === "admin") return { error: "The admin account does not sell properties." };
+  const phone = normalizeIndianPhone(text(fd, "phone", 20));
+  if (!phone) return { error: "Please enter a valid 10-digit mobile number." };
+  const taken = await db.user.findFirst({ where: { id: { not: me.id }, OR: [{ login: phone }, { phone }] } });
+  if (taken) return { error: "This mobile number is already used by another account. Log in with that account instead." };
+  await db.user.update({ where: { id: me.id }, data: { phone } });
+  revalidatePath("/", "layout");
+  return { ok: "Mobile number saved." };
 }
 
 export async function logoutAction() {

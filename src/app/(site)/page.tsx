@@ -38,7 +38,6 @@ export default async function HomePage() {
     typeCounts(),
     localityCounts(12),
   ]);
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const heroCards = featured.slice(0, 2);
 
   return (
@@ -48,19 +47,12 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-gold/[0.07] blur-3xl" />
         <div className="container-x relative grid items-center gap-10 pb-10 pt-8 md:pt-14 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-20">
           <div>
-            <p className="eyebrow">{s.address ?? "Chennai, Tamil Nadu"}</p>
-            <h1 className="mt-4 text-[40px] leading-[1.04] sm:text-[56px] lg:text-[68px]">{s.heroTitle}</h1>
+            <h1 className="text-[40px] leading-[1.04] sm:text-[56px] lg:text-[68px]">{s.heroTitle}</h1>
             {s.heroSubtitle && <p className="mt-4 max-w-xl text-base leading-relaxed text-muted md:text-lg">{s.heroSubtitle}</p>}
             <div className="mt-7 max-w-xl">
               <HeroSearch localities={locs} />
             </div>
-            <dl className={`mt-7 grid max-w-xl gap-3 ${total > 0 ? "grid-cols-2" : "grid-cols-1 max-w-[16rem]"}`}>
-              {total > 0 && (
-                <div className="rounded-2xl bg-surface/70 p-3.5">
-                  <dt className="text-xs text-muted">Properties available</dt>
-                  <dd className="mt-1 font-mono text-lg leading-tight text-gold-2 sm:text-2xl">{total}</dd>
-                </div>
-              )}
+            <dl className="mt-7 grid max-w-[16rem] grid-cols-1 gap-3">
               <div className="rounded-2xl bg-surface/70 p-3.5">
                 <dt className="text-xs text-muted">Loan support</dt>
                 <dd className="mt-1 font-mono text-lg leading-tight text-gold-2 sm:text-2xl">Up to {s.loanMaxPercent}%*</dd>
@@ -100,8 +92,7 @@ export default async function HomePage() {
       <section className="container-x py-10 md:py-14">
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <p className="eyebrow">What we sell</p>
-            <h2 className="section-title mt-2">Browse by property type</h2>
+            <h2 className="section-title">Browse by property type</h2>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

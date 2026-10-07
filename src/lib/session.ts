@@ -41,3 +41,23 @@ export async function verifySession(token: string | undefined): Promise<SessionP
     return null;
   }
 }
+
+/** Cookie settings for the login session (shared by the password and Google log-ins). */
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: SESSION_MAX_AGE,
+};
+
+/** Only allow redirects to pages on this site (never to another website). */
+export function safeNext(raw: string | null | undefined): string | null {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.includes("\\") ? raw : null;
+}
+
+/** Where to go after logging in. */
+export function destination(role: string, next: string | null): string {
+  if (role === "admin") return next?.startsWith("/admin") ? next : "/admin";
+  return next && !next.startsWith("/admin") && next !== "/login" && next !== "/signup" ? next : "/account";
+}
