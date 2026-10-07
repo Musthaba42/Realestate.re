@@ -1,0 +1,33 @@
+{
+  "title": "2 BHK Individual House in Karthik Nagar, Madambakkam",
+  "type": "house",
+  "subType": "Individual House",
+  "locality": "Madambakkam, Guduvanchery",
+  "city": "Chennai",
+  "address": "Plot no. 31, Karthik Nagar, Kuthanoor village, Madambakkam",
+  "mapsUrl": "https://www.google.com/maps/search/?api=1&query=12.842926,80.030075",
+  "showExactLocation": false,
+  "price": 4800000,
+  "isNegotiable": true,
+  "totalSqft": 900,
+  "builtUpSqft": 900,
+  "bhk": 2,
+  "bedrooms": 2,
+  "facing": "south",
+  "roadType": "30ft",
+  "roadNote": "30 ft wide road",
+  "approvalType": "dtcp",
+  "approvalVerified": false,
+  "loanAvailable": true,
+  "loanBanks": "SBI",
+  "loanPercent": 90,
+  "status": "available",
+  "isPublished": true,
+  "description": "Individual house for sale in Karthik Nagar, Kuthanoor village, Madambakkam, Guduvanchery. Built-up area 900 sq.ft, 2 BHK.\n\nSouth facing · 30 ft wide road\nDTCP (as informed by the seller)\nBus route from Kilambakkam and Tambaram · Roshini Matric School nearby · GST Road is 3.5 km away\nSBI bank loan available (up to 90%, subject to lender approval)\nDirect from the builder, who is also the DTCP plot owner.\n\nPrice: ₹48,00,000. The pictures show the 3D design of the house.",
+  "media": [
+    { "file": "WhatsApp Image 2026-10-02 at 6.06.06 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.06.07 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.06.08 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Video 2026-10-02 at 6.06.14 PM.mp4", "category": "walkthrough" }
+  ]
+}

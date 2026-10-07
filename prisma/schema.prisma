@@ -1,0 +1,240 @@
+// Database schema — MongoDB (MongoDB Atlas in production).
+// Uploaded photos/videos/documents are stored in the same database (GridFS bucket "media").
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  number Int    @unique // human-friendly number, shown as code "P-1001"
+  code   String @unique
+  slug   String @unique
+  title  String
+  type   String // land | house | apartment | commercial
+  subType String?
+
+  locality          String
+  city              String
+  district          String?
+  pincode           String?
+  address           String?
+  mapsUrl           String?
+  showExactLocation Boolean @default(false)
+  lat               Float? // approximate map position, used for the "near you" feature
+  lng               Float?
+
+  // Pricing: ONE fixed price in rupees (no price range).
+  price        Float
+  isNegotiable Boolean @default(true)
+
+  totalSqft   Float
+  builtUpSqft Float?
+  carpetSqft  Float?
+
+  bhk        Int?
+  bedrooms   Int?
+  bathrooms  Int?
+  floors     Int?
+  floorNo    Int?
+  parking    String?
+  balcony    Int?
+  kitchen    Boolean @default(false)
+  livingRoom Boolean @default(false)
+
+  facing String?
+
+  constructionStage   String?
+  constructionPercent Int?
+
+  roadType String?
+  roadNote String?
+
+  approvalType     String?
+  approvalNumber   String?
+  approvalVerified Boolean @default(false)
+
+  loanAvailable Boolean @default(false)
+  loanBanks     String?
+  loanPercent   Int?
+
+  status      String  @default("available")
+  isFeatured  Boolean @default(false)
+  isPublished Boolean @default(true)
+
+  description String?
+  searchText  String  @default("")
+
+  source          String  @default("team") // team | seller_request
+  sellerRequestId String? @db.ObjectId
+
+  media     PropertyMedia[]
+  documents PropertyDocument[]
+  leads     Lead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([isPublished])
+}
+
+model PropertyMedia {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  kind       String // image | video | youtube
+  category   String   @default("exterior")
+  url        String
+  isCover    Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model PropertyDocument {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  propertyId String   @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name       String
+  fileUrl    String
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model Lead {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  ref    Int    @unique // shown as "L-12"
+  source String // interested | no_results | contact | loan
+
+  propertyId String?   @db.ObjectId
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  name          String
+  phone         String
+  preferredTime String?
+  message       String?
+  searchFilters String? // JSON string (for no_results)
+
+  propertyPrice   Float?
+  budgetAvailable Float?
+  loanRequired    Float?
+
+  status    String   @default("new")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([source])
+}
+
+model SellerRequest {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  ref        Int    @unique // shown as "S-3"
+  userId     String? @db.ObjectId // the account that submitted it
+  ownerName  String
+  ownerPhone String
+
+  title    String?
+  type     String
+  locality String
+  city     String
+  district String?
+  pincode  String?
+  address  String?
+  mapsUrl  String?
+
+  totalSqft    Float
+  price        Float
+  isNegotiable Boolean @default(true)
+
+  bhk                 Int?
+  bathrooms           Int?
+  facing              String?
+  constructionStage   String?
+  constructionPercent Int?
+  roadType            String?
+  roadNote            String?
+  approvalType        String?
+  loanAvailable       String? // yes | no | not_sure
+  description         String?
+  videoLink           String?
+
+  media String @default("[]") // JSON array of { kind, url }
+
+  status     String  @default("pending") // pending | needs_info | approved | rejected
+  adminNotes String?
+  ownerMessage String? // reason shown to the owner when rejected / more info needed
+  propertyId String? @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}
+
+model TeamMember {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  role        String
+  bio         String?
+  photoUrl    String?
+  phone       String?
+  whatsapp    String?
+  email       String?
+  showContact Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id             String   @id @map("_id") // always "site"
+  businessName   String
+  tagline        String?
+  phone          String
+  whatsappNumber String
+  email          String?
+  address        String?
+  mapsUrl        String?
+  workingHours   String?
+  instagramUrl   String?
+  facebookUrl    String?
+  youtubeUrl     String?
+  heroTitle      String
+  heroSubtitle   String?
+  aboutText      String?
+  reraNumber     String?
+  loanMaxPercent Int      @default(90)
+  updatedAt      DateTime @updatedAt
+}
+
+// Everyone who logs in. role = "admin" (team dashboard) or "user" (can sell a property and track it).
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  login        String   @unique // lower-cased email, or +91XXXXXXXXXX for phone sign-ups
+  name         String
+  phone        String?
+  email        String?
+  passwordHash String
+  role         String   @default("user") // user | admin
+  createdAt    DateTime @default(now())
+
+  @@index([role])
+}
+
+// Atomic counters for human-friendly numbers (P-1001, S-1, L-1).
+model Counter {
+  id  String @id @map("_id")
+  seq Int    @default(0)
+}

@@ -1,0 +1,20 @@
+{
+  "title": "80 Acres Land for Sale in Nellikuppam, Guduvanchery",
+  "type": "land",
+  "locality": "Nellikuppam, Guduvanchery",
+  "city": "Chennai",
+  "mapsUrl": "https://www.google.com/maps/search/?api=1&query=12.743194,80.119056",
+  "showExactLocation": false,
+  "price": 2800000000,
+  "isNegotiable": true,
+  "totalSqft": 3484800,
+  "roadType": "40ft",
+  "roadNote": "40 ft road, frontage 150 ft",
+  "status": "available",
+  "isPublished": true,
+  "description": "80 acres of land for sale at Nellikuppam, Guduvanchery (Chennai).\n\nExtent: 80 acres (3,484,800 sq.ft)\nRoad width: 40 ft · Frontage: 150 ft\nLand classification: Punjai (dry land)\n\nPrice: ₹3.50 Crore per acre (₹280 Crore for 80 acres).",
+  "media": [
+    { "file": "WhatsApp Image 2026-10-02 at 5.59.48 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Video 2026-10-02 at 5.59.48 PM.mp4", "category": "walkthrough" }
+  ]
+}

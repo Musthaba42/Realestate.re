@@ -1,0 +1,28 @@
+{
+  "title": "Land for Sale in Revathipuram, Urapakkam",
+  "type": "land",
+  "locality": "Revathipuram, Urapakkam",
+  "city": "Chennai",
+  "address": "Behind Kilambakkam bus stand",
+  "showExactLocation": false,
+  "price": 65340000,
+  "isNegotiable": true,
+  "totalSqft": 10890,
+  "status": "available",
+  "isPublished": true,
+  "description": "Land for sale in Revathipuram, Urapakkam, behind Kilambakkam bus stand.\n\nExtent: 25 cents (10,890 sq.ft)\nSurrounded by residential area\nApproved property (as informed by the owner) · Direct owner\n\nPrice: ₹6,000 per sq.ft (₹6,53,40,000 in total), slightly negotiable.\nExcellent location for residential investment and development.",
+  "media": [
+    { "file": "WhatsApp Image 2026-10-02 at 6.00.53 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.00.56 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.00.57 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.02 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.03 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.05 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.06 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.09 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.10 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.11 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Image 2026-10-02 at 6.01.12 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Video 2026-10-02 at 5.59.49 PM.mp4", "category": "walkthrough" }
+  ]
+}

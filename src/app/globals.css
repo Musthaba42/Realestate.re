@@ -1,0 +1,391 @@
+@import "tailwindcss";
+
+/* Design tokens — Golden Groups: warm black + brushed gold (from the logo), rounded UI from the reference design */
+@theme {
+  --color-bg: #121110;
+  --color-surface: #1c1a17;
+  --color-surface-2: #27241f;
+  --color-surface-3: #332f28;
+  --color-line: #3b362d;
+  --color-ink: #fbf8f1;
+  --color-muted: #b5ad9d;
+  --color-faint: #80786a;
+  --color-gold: #d9ad4b;
+  --color-gold-2: #f0cf7a;
+  --color-gold-3: #a87b25;
+  --color-on-gold: #1c1406;
+  --color-accent: #3ddc84;
+  --color-warn: #f5b84b;
+  --color-danger: #ff6b6b;
+  --color-info: #6ab7ff;
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius-card: 1.75rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Prevent grid children with horizontal scrollers from widening the page. */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 768px) {
+    .container-x {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* Buttons — pill shaped like the reference */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.875rem;
+    padding: 0 1.25rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+    user-select: none;
+    cursor: pointer;
+  }
+  .btn:active {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--color-gold-2), var(--color-gold) 55%, var(--color-gold-3));
+    color: var(--color-on-gold);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.06);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+  }
+  .btn-ghost:hover {
+    background: var(--color-surface-2);
+  }
+  .btn-soft {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .btn-soft:hover {
+    background: var(--color-surface-3);
+  }
+  .btn-danger {
+    background: transparent;
+    color: var(--color-danger);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 45%, transparent);
+  }
+  .btn-danger:hover {
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  }
+  .btn-whatsapp {
+    background: #25d366;
+    color: #0b2e17;
+  }
+  .btn-whatsapp:hover {
+    background: #1fbe5b;
+  }
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: 0 0.95rem;
+    font-size: 0.8125rem;
+  }
+  .btn-lg {
+    min-height: 3.25rem;
+    padding: 0 1.6rem;
+    font-size: 1rem;
+  }
+
+  /* Round icon buttons (glass, used on top of images) */
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: rgba(20, 18, 16, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover {
+    background: rgba(20, 18, 16, 0.8);
+  }
+  .icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .icon-btn-solid {
+    background: var(--color-surface-2);
+    border-color: var(--color-line);
+    backdrop-filter: none;
+  }
+
+  /* Pills / chips like "All · Price · Property" */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.25rem;
+    padding: 0 1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .chip:hover {
+    color: var(--color-ink);
+    border-color: var(--color-faint);
+  }
+  .chip-active,
+  .chip-active:hover {
+    background: var(--color-gold);
+    border-color: var(--color-gold);
+    color: var(--color-on-gold);
+    font-weight: 600;
+  }
+
+  /* Small info chips (BHK · Sq.ft · Facing) */
+  .spec {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.75rem;
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* Status badge with dot like "● For sale" */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: rgba(18, 17, 16, 0.72);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    white-space: nowrap;
+  }
+  .badge-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 9999px;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+
+  .card {
+    background: var(--color-surface);
+    border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+    border-radius: var(--radius-card);
+  }
+
+  /* Forms */
+  .label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: 0.4rem;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: var(--color-faint);
+    margin-top: 0.35rem;
+  }
+  .input {
+    width: 100%;
+    min-height: 2.875rem;
+    padding: 0.65rem 1rem;
+    border-radius: 1rem;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+    font-size: 1rem; /* 16px avoids iOS zoom on focus */
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .input::placeholder {
+    color: var(--color-faint);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+    background: var(--color-surface-3);
+  }
+  textarea.input {
+    min-height: 6.5rem;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  select.input {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3aab4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+  }
+  select.input option {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .checkbox {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--color-gold);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  @media (min-width: 768px) {
+    .section-title {
+      font-size: 2rem;
+    }
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Image overlay gradient */
+  .img-fade {
+    background: linear-gradient(180deg, rgba(14, 13, 12, 0) 35%, rgba(14, 13, 12, 0.9) 100%);
+  }
+
+  /* Admin table */
+  .table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+  .table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-line);
+    white-space: nowrap;
+  }
+  .table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-line) 55%, transparent);
+    vertical-align: middle;
+  }
+  .table tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+/* Bottom safe-area spacing for fixed bars on phones */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet {
+  animation: sheet-up 0.22s ease-out;
+}
+.animate-fade {
+  animation: fade-in 0.18s ease-out;
+}

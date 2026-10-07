@@ -1,0 +1,21 @@
+{
+  "title": "Land for Sale in Karanai Puducherry, Urapakkam",
+  "type": "land",
+  "locality": "Karanai Puducherry, Urapakkam",
+  "city": "Chennai",
+  "mapsUrl": "https://www.google.com/maps/search/?api=1&query=12.845194,80.086667",
+  "showExactLocation": false,
+  "price": 10972500,
+  "isNegotiable": true,
+  "totalSqft": 1995,
+  "facing": "south",
+  "roadType": "20ft",
+  "roadNote": "20 feet road",
+  "status": "available",
+  "isPublished": true,
+  "description": "Land for sale in Karanai Puducherry, Urapakkam.\n\nLand extent: 1,995 sq.ft\nFacing: South\nRoad: 20 feet\nPrice: ₹5,500 per sq.ft (₹1,09,72,500 in total), negotiable.\n\nA plot sketch and a video are included. Tap “I am Interested” and our team will call you with the details.",
+  "media": [
+    { "file": "WhatsApp Image 2026-10-02 at 5.47.43 PM.jpeg", "category": "road" },
+    { "file": "WhatsApp Video 2026-10-02 at 5.47.51 PM.mp4", "category": "walkthrough" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "House for Sale in Mathur MMDA, Chennai",
+  "type": "house",
+  "locality": "Mathur MMDA",
+  "city": "Chennai",
+  "pincode": "600068",
+  "address": "3rd Main Road, 4th Cross Street, Mathur MMDA, Chennai 68",
+  "showExactLocation": false,
+  "price": 24500000,
+  "isNegotiable": true,
+  "totalSqft": 1920,
+  "builtUpSqft": 1800,
+  "parking": "Car parking",
+  "facing": "north",
+  "status": "available",
+  "isPublished": true,
+  "description": "House for sale in Mathur MMDA, Chennai 68.\n\nLand: 32 × 60 ft = 1,920 sq.ft · Built-up area: 1,800 sq.ft\nNorth facing · Car parking with one shop · Double bedroom\n\nPrice: ₹2.45 Crore (₹2,45,00,000).",
+  "media": [
+    { "file": "WhatsApp Image 2026-10-02 at 5.56.58 PM.jpeg", "category": "exterior" },
+    { "file": "WhatsApp Video 2026-10-02 at 11.07.49 PM.mp4", "category": "walkthrough" }
+  ]
+}
