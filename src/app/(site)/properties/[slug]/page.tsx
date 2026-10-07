@@ -53,7 +53,6 @@ import {
 } from "@/lib/format";
 import { PropertyGallery } from "@/components/site/PropertyGallery";
 import { PropertyActions } from "@/components/site/PropertyActions";
-import { FacingCompass } from "@/components/site/FacingCompass";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PropertyCard } from "@/components/PropertyCard";
 import { searchProperties } from "@/lib/properties";
@@ -228,16 +227,6 @@ export default async function PropertyPage({ params }: Props) {
             <h2 id="overview" className="mb-3 text-2xl">
               Overview
             </h2>
-            {p.facing && (
-              <div className="mb-2.5 flex items-center gap-4 rounded-2xl border border-line/70 bg-surface p-3 pr-5">
-                <FacingCompass facing={p.facing} label={labelOf(FACINGS, p.facing)} className="size-20 shrink-0" />
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-wider text-muted">Facing</p>
-                  <p className="font-display text-2xl">{labelOf(FACINGS, p.facing)}</p>
-                  <p className="mt-0.5 text-xs text-faint">Direction of the main entrance / plot frontage</p>
-                </div>
-              </div>
-            )}
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {tiles.map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface p-3">

@@ -46,12 +46,6 @@ export default async function HomePage() {
             <div className="mt-7 max-w-xl">
               <HeroSearch localities={locs} />
             </div>
-            <dl className="mt-7 grid max-w-[16rem] grid-cols-1 gap-3">
-              <div className="rounded-2xl bg-surface/70 p-3.5">
-                <dt className="text-xs text-muted">Loan support</dt>
-                <dd className="mt-1 font-mono text-lg leading-tight text-gold-2 sm:text-2xl">Up to {s.loanMaxPercent}%*</dd>
-              </div>
-            </dl>
           </div>
 
           {heroCards.length === 0 && (
