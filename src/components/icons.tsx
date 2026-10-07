@@ -1,4 +1,4 @@
-// Brand icons (not included in lucide-react v1).
+// Third-party brand marks (drawn to their official shapes; not part of the glyph set).
 type P = { className?: string };
 
 export function WhatsAppIcon({ className = "size-5" }: P) {

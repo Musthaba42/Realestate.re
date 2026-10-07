@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Banknote, FileText, Landmark, UserRound } from "lucide-react";
+import { Banknote, FileText, Landmark, UserRound } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { LoanForm } from "@/components/site/LoanForm";

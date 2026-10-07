@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Bath, BedDouble, Compass, MapPin, Maximize } from "lucide-react";
+import { ArrowUpRight, Bath, BedDouble, Compass, MapPin, Maximize } from "@/components/glyphs";
 import type { PropertyCardData } from "@/lib/properties";
 import { FACINGS, PROPERTY_TYPES, labelOf } from "@/lib/constants";
 import { formatNumber, formatPriceShort } from "@/lib/format";
@@ -24,13 +24,13 @@ export function PropertyCard({ p, priority = false }: { p: PropertyCardData; pri
         />
         <div className="img-fade absolute inset-0" />
         {p.status === "sold" && <SoldStamp />}
-        <div className="absolute inset-x-3 top-3 z-[2] flex items-start justify-between gap-2">
+        <div className="absolute inset-x-3 top-3 z-[2] flex flex-wrap items-start justify-between gap-2">
           <StatusBadge status={p.status} percent={p.constructionPercent} />
           <span className="badge">{labelOf(PROPERTY_TYPES, p.type)}</span>
         </div>
         <div className="absolute inset-x-4 bottom-3.5 z-[2] flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[26px] font-bold leading-none tracking-tight">{formatPriceShort(p.price)}</p>
+            <p className="font-display text-[28px] leading-none">{formatPriceShort(p.price)}</p>
             <p className="mt-1.5 flex items-center gap-1 truncate text-xs text-white/80">
               <MapPin className="size-3.5 shrink-0" />
               <span className="truncate">
@@ -49,7 +49,10 @@ export function PropertyCard({ p, priority = false }: { p: PropertyCardData; pri
         </div>
       </div>
       <div className="px-2 pb-1.5 pt-3">
-        <h3 className="truncate text-[15px] font-semibold">{p.title}</h3>
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="truncate text-[15px] font-semibold">{p.title}</h3>
+          <span className="shrink-0 font-mono text-[10px] tracking-wider text-faint">{p.code}</span>
+        </div>
         <div className="no-scrollbar mt-2.5 flex gap-1.5 overflow-x-auto">
           {p.bhk != null && (
             <span className="spec">

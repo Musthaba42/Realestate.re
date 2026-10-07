@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CircleCheck, Info, LoaderCircle, Phone } from "lucide-react";
+import { CircleCheck, Info, LoaderCircle, Phone } from "@/components/glyphs";
 import { CONSENT_TEXT, PREFERRED_TIMES } from "@/lib/constants";
 import { formatINR, formatPriceShort } from "@/lib/format";
 import { WhatsAppIcon } from "@/components/icons";

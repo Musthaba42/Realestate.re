@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/glyphs";
 import { PropertyForm } from "@/components/admin/PropertyForm";
 
 export const metadata: Metadata = { title: "Add property" };

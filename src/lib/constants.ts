@@ -13,9 +13,9 @@ export const PROPERTY_TYPE_VALUES = PROPERTY_TYPES.map((t) => t.value);
 export const RESIDENTIAL_TYPES = ["house", "apartment"];
 
 export const PROPERTY_STATUSES = [
-  { value: "available", label: "Available" },
+  { value: "available", label: "For Sale" },
   { value: "new", label: "New" },
-  { value: "under_construction", label: "Under Construction" },
+  { value: "under_construction", label: "Under Construction (For Sale)" },
   { value: "ready_to_move", label: "Ready to Move" },
   { value: "coming_soon", label: "Coming Soon" },
   { value: "reserved", label: "Reserved" },
@@ -75,6 +75,20 @@ export const MEDIA_CATEGORIES = [
   { value: "walkthrough", label: "Walkthrough" },
   { value: "promo", label: "Promotional" },
 ] as const satisfies readonly Option[];
+
+export const LANDMARK_KINDS = [
+  { value: "transport", label: "Railway / Metro / Bus" },
+  { value: "highway", label: "Highway / Main road" },
+  { value: "airport", label: "Airport" },
+  { value: "school", label: "School / College" },
+  { value: "hospital", label: "Hospital" },
+  { value: "temple", label: "Temple / Place of worship" },
+  { value: "shopping", label: "Market / Mall" },
+  { value: "office", label: "IT park / Offices" },
+  { value: "other", label: "Other" },
+] as const satisfies readonly Option[];
+
+export const MAX_LANDMARKS = 12;
 
 export const LEAD_SOURCES = [
   { value: "interested", label: "I am Interested" },

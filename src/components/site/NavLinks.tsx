@@ -8,7 +8,7 @@ export function NavLinks({ items }: { items: { href: string; label: string }[] }
   return (
     <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Main">
       {items.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+        const active = item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link
             key={item.href}

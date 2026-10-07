@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Search, CirclePlus, CircleUserRound } from "lucide-react";
+import { House, Search, CirclePlus, CircleUserRound } from "@/components/glyphs";
 
 /** Floating bottom bar for phones — modelled on the reference design. */
 export function BottomNav({ accountHref }: { accountHref: string }) {
@@ -32,11 +32,15 @@ export function BottomNav({ accountHref }: { accountHref: string }) {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={`flex h-12 items-center justify-center gap-2 rounded-full transition-all ${
-                active ? "bg-gold px-4 text-on-gold" : "w-12 bg-surface-2 text-ink"
+                active
+                  ? "bg-gold px-4 text-on-gold"
+                  : href === "/sell"
+                    ? "border border-gold/60 bg-surface-2 px-4 text-gold-2"
+                    : "w-12 bg-surface-2 text-ink"
               }`}
             >
               <Icon className="size-5" />
-              {active && <span className="text-sm font-semibold">{label}</span>}
+              {(active || href === "/sell") && <span className="text-sm font-semibold">{label}</span>}
             </Link>
           );
         })}

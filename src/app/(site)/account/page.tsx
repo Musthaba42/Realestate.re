@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CirclePlus, ExternalLink, LogOut, MessageSquareWarning } from "lucide-react";
+import { CirclePlus, ExternalLink, LogOut, MessageSquareWarning } from "@/components/glyphs";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logoutAction } from "@/app/auth/actions";

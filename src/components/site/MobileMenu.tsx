@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "@/components/glyphs";
 import { Portal } from "@/components/Portal";
 
 export function MobileMenu({
@@ -47,14 +47,14 @@ export function MobileMenu({
           <div className="animate-fade absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div className="animate-sheet absolute inset-x-3 top-3 rounded-[28px] md:left-auto md:w-96 border border-line bg-surface p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between px-1">
-              <span className="font-bold">{businessName}</span>
+              <span className="font-display text-lg text-gold-2">{businessName}</span>
               <button type="button" className="icon-btn icon-btn-solid" aria-label="Close menu" onClick={() => setOpen(false)}>
                 <X className="size-[18px]" />
               </button>
             </div>
             <nav className="grid gap-1" aria-label="Mobile">
               {items.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                const active = item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <Link
                     key={item.href}

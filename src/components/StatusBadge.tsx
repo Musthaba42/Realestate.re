@@ -21,8 +21,21 @@ export function StatusBadge({
   className?: string;
 }) {
   const color = DOT[status] ?? "var(--color-accent)";
-  const label = status === "available" ? "For Sale" : labelOf(PROPERTY_STATUSES, status);
   const showPercent = status === "under_construction" && percent != null && percent > 0 && percent < 100;
+  // Under-construction properties are on sale too: say both.
+  if (status === "under_construction") {
+    return (
+      <span className={`badge ${className}`}>
+        <span className="badge-dot" />
+        For Sale
+        <span className="h-3 w-px bg-white/25" aria-hidden="true" />
+        <span className="text-warn">
+          Under construction{showPercent && <span className="opacity-80"> · {percent}%</span>}
+        </span>
+      </span>
+    );
+  }
+  const label = status === "available" ? "For Sale" : labelOf(PROPERTY_STATUSES, status);
   return (
     <span className={`badge ${className}`}>
       <span
@@ -30,7 +43,6 @@ export function StatusBadge({
         style={{ background: color, boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 25%, transparent)` }}
       />
       {label}
-      {showPercent && <span className="opacity-75">· {percent}%</span>}
     </span>
   );
 }

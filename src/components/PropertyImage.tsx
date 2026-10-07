@@ -1,4 +1,4 @@
-import { House } from "lucide-react";
+import { House } from "@/components/glyphs";
 
 /** Plain <img> with a neutral placeholder when a property has no photo yet. */
 export function PropertyImage({

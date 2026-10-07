@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/glyphs";
 import { TeamForm } from "@/components/admin/TeamForm";
 
 export const metadata: Metadata = { title: "Add team member" };

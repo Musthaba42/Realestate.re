@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, FileText, LoaderCircle, Play, Star, Trash, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, LoaderCircle, Play, Star, Trash, Upload } from "@/components/glyphs";
 import type { PropertyDocument, PropertyMedia } from "@prisma/client";
 import {
   addYoutubeAction,
@@ -50,7 +50,7 @@ export function MediaManager({ propertyId, media }: { propertyId: string; media:
     <section className="card p-5 md:p-6">
       <h2 className="font-bold">Photos & videos</h2>
       <p className="mt-0.5 text-sm text-muted">
-        The ★ photo is the cover image. Photos are resized automatically. Videos up to 100 MB — for longer videos, add a YouTube link.
+        The cover photo is shown on listing cards. On the property page, videos play first and photos follow in this order. Photos are resized automatically. Videos up to 100 MB — for longer videos, add a YouTube link.
       </p>
 
       <div className="mt-5 flex flex-wrap items-end gap-3">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building, Inbox, LayoutDashboard, Settings, Tag, UsersRound } from "lucide-react";
+import { Building, Inbox, LayoutDashboard, Settings, Tag, UsersRound } from "@/components/glyphs";
 
 const ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },

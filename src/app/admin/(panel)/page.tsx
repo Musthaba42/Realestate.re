@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Building, Inbox, Plus, Tag, TriangleAlert } from "lucide-react";
+import { ArrowRight, Building, Inbox, Plus, Tag, TriangleAlert } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { LEAD_SOURCES, LEAD_STATUSES, PROPERTY_TYPES, SELLER_STATUSES, labelOf } from "@/lib/constants";

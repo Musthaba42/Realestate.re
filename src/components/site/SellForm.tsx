@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CircleCheck, ImagePlus, LoaderCircle, Phone, Video, X } from "lucide-react";
+import { CircleCheck, ImagePlus, LoaderCircle, Phone, Video, X } from "@/components/glyphs";
 import {
   APPROVAL_TYPES,
   BHK_OPTIONS,
@@ -206,14 +206,14 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
               onChange={(e) => setPrice(e.target.value.replace(/[^\d,]/g, ""))}
             />
             <span className="hint">
-              One fixed price. {priceNum > 0 ? <strong className="text-muted">{formatINR(priceNum)}</strong> : null}
+              Your asking price (one amount, not a range). {priceNum > 0 ? <strong className="text-muted">{formatINR(priceNum)}</strong> : null}
             </span>
           </label>
           <fieldset className="sm:col-span-2">
             <legend className="label">Is the price negotiable?</legend>
             <div className="flex gap-2">
               <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
-                <input type="radio" name="isNegotiable" value="yes" defaultChecked className="sr-only" /> Slightly negotiable
+                <input type="radio" name="isNegotiable" value="yes" defaultChecked className="sr-only" /> Negotiable
               </label>
               <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
                 <input type="radio" name="isNegotiable" value="no" className="sr-only" /> Fixed – not negotiable

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Video, X } from "lucide-react";
+import { ImagePlus, Plus, Trash, Video, X } from "@/components/glyphs";
 import type { Property } from "@prisma/client";
 import { savePropertyAction, type FormState } from "@/app/admin/actions";
 import { uploadPropertyFiles } from "@/lib/client-image";
@@ -12,6 +12,8 @@ import {
   BHK_OPTIONS,
   CONSTRUCTION_STAGES,
   FACINGS,
+  LANDMARK_KINDS,
+  MAX_LANDMARKS,
   PROPERTY_STATUSES,
   PROPERTY_TYPES,
   RESIDENTIAL_TYPES,
@@ -118,6 +120,80 @@ function Check({ label, name, defaultChecked, hint }: { label: string; name: str
   );
 }
 
+type LandmarkRow = { key: number; name: string; kind: string; km: string };
+
+/** "Explore the locality": big landmarks near the property, with distance in km. */
+function LandmarkEditor({ initial }: { initial: { name: string; kind: string; distanceKm: number }[] }) {
+  const nextKey = useRef(initial.length + 1);
+  const [rows, setRows] = useState<LandmarkRow[]>(() =>
+    initial.length
+      ? initial.map((l, i) => ({ key: i, name: l.name, kind: l.kind, km: String(l.distanceKm) }))
+      : [{ key: 0, name: "", kind: "transport", km: "" }],
+  );
+  const update = (key: number, patch: Partial<LandmarkRow>) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...patch } : x)));
+
+  return (
+    <section className="card p-5 md:p-6">
+      <h2 className="font-bold">Explore the locality</h2>
+      <p className="mt-0.5 text-sm text-muted">
+        Big landmarks near this property and how far they are, e.g. “Urapakkam Railway Station – 1.5 km”. Shown on the property page,
+        nearest first. Empty rows are ignored.
+      </p>
+      <div className="mt-5 space-y-2.5">
+        {rows.map((r) => (
+          <div key={r.key} className="grid gap-2 rounded-2xl bg-surface-2 p-2.5 sm:grid-cols-[1fr_200px_110px_auto] sm:items-center">
+            <input
+              name="landmarkName"
+              className="input"
+              placeholder="Landmark name"
+              value={r.name}
+              maxLength={80}
+              onChange={(e) => update(r.key, { name: e.target.value })}
+              aria-label="Landmark name"
+            />
+            <select name="landmarkKind" className="input" value={r.kind} onChange={(e) => update(r.key, { kind: e.target.value })} aria-label="Landmark type">
+              {LANDMARK_KINDS.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+            <div className="relative">
+              <input
+                name="landmarkKm"
+                className="input pr-10"
+                inputMode="decimal"
+                placeholder="0.0"
+                value={r.km}
+                onChange={(e) => update(r.key, { km: e.target.value.replace(/[^\d.]/g, "") })}
+                aria-label="Distance in km"
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted">km</span>
+            </div>
+            <button
+              type="button"
+              className="icon-btn icon-btn-solid justify-self-end text-danger"
+              aria-label="Remove landmark"
+              onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}
+            >
+              <Trash className="size-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+      {rows.length < MAX_LANDMARKS && (
+        <button
+          type="button"
+          className="btn btn-soft btn-sm mt-3"
+          onClick={() => setRows((rs) => [...rs, { key: nextKey.current++, name: "", kind: "other", km: "" }])}
+        >
+          <Plus className="size-4" /> Add landmark
+        </button>
+      )}
+    </section>
+  );
+}
+
 type Picked = { file: File; preview: string };
 
 /** Photo/video picker used when adding a new property (uploaded right after saving). */
@@ -127,7 +203,7 @@ function NewMediaPicker({ items, setItems }: { items: Picked[]; setItems: React.
     <section className="card p-5 md:p-6">
       <h2 className="font-bold">Photos & videos</h2>
       <p className="mt-0.5 text-sm text-muted">
-        The first photo becomes the cover. Photos are resized automatically. You can add more, reorder and set the cover later.
+        The first photo becomes the cover. On the property page the video plays first, then the photos. Photos are resized automatically; you can add more, reorder and set the cover later.
       </p>
       <div className="mt-5 grid grid-cols-3 gap-2.5 sm:grid-cols-5">
         {items.map((it, i) => (
@@ -243,7 +319,7 @@ export function PropertyForm({ property }: { property?: Property | null }) {
         </label>
       </Card>
 
-      <Card title="Price" desc="One fixed price. No price range.">
+      <Card title="Price" desc="One price for the property (no price range). Tick “Negotiable” to show that the price is open to discussion.">
         <label className="block">
           <span className="label">Price (₹) *</span>
           <input
@@ -261,7 +337,7 @@ export function PropertyForm({ property }: { property?: Property | null }) {
           </span>
         </label>
         <div className="self-end">
-          <Check label="Slightly negotiable" name="isNegotiable" defaultChecked={p ? p.isNegotiable : true} hint="Shows “Slightly negotiable” next to the price" />
+          <Check label="Negotiable" name="isNegotiable" defaultChecked={p ? p.isNegotiable : true} hint="Shows “Negotiable price” next to the price" />
         </div>
       </Card>
 
@@ -357,6 +433,8 @@ export function PropertyForm({ property }: { property?: Property | null }) {
           />
         </div>
       </Card>
+
+      <LandmarkEditor initial={p?.landmarks ?? []} />
 
       <Card title="Status & visibility">
         <Select label="Status" name="status" options={PROPERTY_STATUSES} empty={null} defaultValue={p?.status ?? "available"} />

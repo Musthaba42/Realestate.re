@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Ban, CircleCheck, ExternalLink, Navigation, Phone, Trash } from "lucide-react";
+import { ArrowLeft, Ban, CircleCheck, ExternalLink, Navigation, Phone, Trash } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import {
   APPROVAL_TYPES,
@@ -106,7 +106,7 @@ export default async function SellerRequestPage({ params, searchParams }: Props)
               <Row label="Type">{labelOf(PROPERTY_TYPES, r.type)}</Row>
               <Row label="Expected price">
                 <strong>{formatINR(r.price)}</strong> {per ? <span className="text-muted">· {formatINR(per)}/sq.ft</span> : null} ·{" "}
-                {r.isNegotiable ? "Slightly negotiable" : "Fixed"}
+                {r.isNegotiable ? "Negotiable" : "Fixed"}
               </Row>
               <Row label="Total area">{formatNumber(r.totalSqft)} sq.ft</Row>
               {r.bhk && <Row label="BHK">{r.bhk >= 5 ? "5+" : r.bhk} BHK</Row>}

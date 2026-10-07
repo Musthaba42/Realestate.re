@@ -14,8 +14,8 @@ export function Logo({ name, href = "/", size = 44 }: { name: string; href?: str
         style={{ width: size, height: size }}
       />
       <span className="min-w-0 leading-tight">
-        <span className="block truncate text-[16px] font-bold tracking-tight text-gold-2">{name}</span>
-        <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Real Estate</span>
+        <span className="block truncate font-display text-[18px] leading-tight text-foil">{name}</span>
+        <span className="block truncate font-mono text-[9.5px] uppercase tracking-[0.28em] text-muted">Real Estate</span>
       </span>
     </Link>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone, Clock } from "lucide-react";
+import { Mail, MapPin, Phone, Clock } from "@/components/glyphs";
 import type { Settings } from "@/lib/settings";
 import { displayPhone, telLink, whatsappLink } from "@/lib/format";
 import { LOAN_DISCLAIMER, PROPERTY_TYPES } from "@/lib/constants";
@@ -14,26 +14,6 @@ export function Footer({ s }: { s: Settings }) {
         <div className="space-y-4">
           <Logo name={s.businessName} />
           {s.tagline && <p className="text-sm text-muted">{s.tagline}</p>}
-          <div className="flex gap-2">
-            {s.instagramUrl && (
-              <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid" aria-label="Instagram">
-                <InstagramIcon className="size-[18px]" />
-              </a>
-            )}
-            {s.facebookUrl && (
-              <a href={s.facebookUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid" aria-label="Facebook">
-                <FacebookIcon className="size-[18px]" />
-              </a>
-            )}
-            {s.youtubeUrl && (
-              <a href={s.youtubeUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid" aria-label="YouTube">
-                <YouTubeIcon className="size-[18px]" />
-              </a>
-            )}
-            <a href={whatsappLink(s.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid" aria-label="WhatsApp">
-              <WhatsAppIcon className="size-[18px]" />
-            </a>
-          </div>
         </div>
 
         <div>
@@ -106,6 +86,26 @@ export function Footer({ s }: { s: Settings }) {
               </li>
             )}
           </ul>
+          <div className="mt-5 flex gap-2" aria-label="Social media">
+            {s.instagramUrl && (
+              <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="Instagram">
+                <InstagramIcon className="size-[18px]" />
+              </a>
+            )}
+            {s.facebookUrl && (
+              <a href={s.facebookUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="Facebook">
+                <FacebookIcon className="size-[18px]" />
+              </a>
+            )}
+            {s.youtubeUrl && (
+              <a href={s.youtubeUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="YouTube">
+                <YouTubeIcon className="size-[18px]" />
+              </a>
+            )}
+            <a href={whatsappLink(s.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="WhatsApp">
+              <WhatsAppIcon className="size-[18px]" />
+            </a>
+          </div>
         </div>
       </div>
 

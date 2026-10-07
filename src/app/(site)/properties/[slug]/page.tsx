@@ -9,23 +9,32 @@ import {
   Building,
   Car,
   Compass,
+  Briefcase,
   FileText,
+  Flag,
+  GraduationCap,
   HardHat,
+  Hospital,
   Layers,
   MapPin,
   Maximize,
   Navigation,
+  Plane,
   Route,
   Ruler,
   ShieldCheck,
+  ShoppingBag,
+  Temple,
+  Train,
   Wallet,
-} from "lucide-react";
+} from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import {
   APPROVAL_TYPES,
   CONSTRUCTION_STAGES,
   FACINGS,
+  LANDMARK_KINDS,
   LOAN_DISCLAIMER,
   OPEN_STATUSES,
   PROPERTY_TYPES,
@@ -41,15 +50,31 @@ import {
   pricePerSqft,
   telLink,
   whatsappLink,
-  youtubeId,
 } from "@/lib/format";
 import { PropertyGallery } from "@/components/site/PropertyGallery";
 import { PropertyActions } from "@/components/site/PropertyActions";
+import { FacingCompass } from "@/components/site/FacingCompass";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PropertyCard } from "@/components/PropertyCard";
 import { searchProperties } from "@/lib/properties";
 
 type Props = { params: Promise<{ slug: string }> };
+
+const LANDMARK_ICON: Record<string, React.ElementType> = {
+  transport: Train,
+  highway: Route,
+  airport: Plane,
+  school: GraduationCap,
+  hospital: Hospital,
+  temple: Temple,
+  shopping: ShoppingBag,
+  office: Briefcase,
+  other: Flag,
+};
+
+function formatKm(km: number): string {
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km % 1 === 0 ? km : km.toFixed(1)} km`;
+}
 
 async function getProperty(slug: string) {
   return db.property.findFirst({
@@ -83,8 +108,10 @@ export default async function PropertyPage({ params }: Props) {
   const [p, s] = await Promise.all([getProperty(slug), getSettings()]);
   if (!p) notFound();
 
-  const images = p.media.filter((m) => m.kind === "image").map((m) => ({ url: m.url, category: m.category }));
-  const videos = p.media.filter((m) => m.kind === "video" || m.kind === "youtube");
+  const gallery = p.media
+    .filter((m) => m.kind === "image" || m.kind === "video" || m.kind === "youtube")
+    .map((m) => ({ kind: m.kind as "image" | "video" | "youtube", url: m.url }));
+  const landmarks = p.landmarks ?? [];
   const isResidential = RESIDENTIAL_TYPES.includes(p.type);
   const perSqft = pricePerSqft(p.price, p.totalSqft);
   const isOpen = OPEN_STATUSES.includes(p.status);
@@ -99,9 +126,11 @@ export default async function PropertyPage({ params }: Props) {
   const approvalLabel = p.approvalVerified && p.approvalType ? `${labelOf(APPROVAL_TYPES, p.approvalType)} Approved` : null;
 
   const similarQuery = new URLSearchParams({ type: p.type, area: p.locality }).toString();
-  const similar = (await searchProperties({ type: p.type, sort: "newest" }))
-    .filter((x) => x.id !== p.id && OPEN_STATUSES.includes(x.status))
-    .slice(0, 3);
+  const [similarAll, sameArea] = await Promise.all([
+    searchProperties({ type: p.type, sort: "newest" }),
+    db.property.count({ where: { isPublished: true, locality: p.locality, status: { in: OPEN_STATUSES }, id: { not: p.id } } }),
+  ]);
+  const similar = similarAll.filter((x) => x.id !== p.id && OPEN_STATUSES.includes(x.status)).slice(0, 3);
 
   const waText = `Hi, I am interested in this property.\nProperty: ${p.title} – ${p.locality} (ID: ${p.code})\nPrice: ${formatINR(
     p.price,
@@ -140,18 +169,21 @@ export default async function PropertyPage({ params }: Props) {
         <span className="badge bg-surface-2">ID: {p.code}</span>
       </div>
       <div>
-        <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-[28px]">{p.title}</h1>
+        <h1 className="text-[26px] leading-tight md:text-[30px]">{p.title}</h1>
         <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
           <MapPin className="size-4 shrink-0" />
           {p.showExactLocation && p.address ? p.address : `${p.locality}, ${p.city}`}
         </p>
       </div>
-      <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-        <p className="text-[34px] font-bold leading-none tracking-tight">{formatINR(p.price)}</p>
-        <p className="pb-1 text-sm text-muted">
-          {perSqft ? `${formatINR(perSqft)}/sq.ft` : ""}
-          {perSqft ? " · " : ""}
-          {p.isNegotiable ? "Slightly negotiable" : "Fixed price"}
+      <div>
+        <p className="font-display text-[38px] leading-none text-foil">{formatINR(p.price)}</p>
+        <p className="mt-2.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+          {p.isNegotiable && (
+            <span className="rounded-md border border-gold/50 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-gold-2">
+              Negotiable price
+            </span>
+          )}
+          {perSqft && <span className="font-mono text-[13px]">{formatINR(perSqft)}/sq.ft</span>}
         </p>
       </div>
       {p.loanAvailable && (
@@ -187,15 +219,25 @@ export default async function PropertyPage({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-10">
         {/* LEFT */}
         <div className="min-w-0 space-y-6">
-          <PropertyGallery images={images} title={p.title} hasVideo={videos.length > 0} sold={p.status === "sold"} />
+          <PropertyGallery items={gallery} title={p.title} sold={p.status === "sold"} />
 
           <div className="card p-5 lg:hidden">{summary}</div>
 
           {/* Info tiles — like "Property type / Year built" in the reference */}
           <section aria-labelledby="overview">
-            <h2 id="overview" className="mb-3 text-lg font-bold">
+            <h2 id="overview" className="mb-3 text-2xl">
               Overview
             </h2>
+            {p.facing && (
+              <div className="mb-2.5 flex items-center gap-4 rounded-2xl border border-line/70 bg-surface p-3 pr-5">
+                <FacingCompass facing={p.facing} label={labelOf(FACINGS, p.facing)} className="size-20 shrink-0" />
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-wider text-muted">Facing</p>
+                  <p className="font-display text-2xl">{labelOf(FACINGS, p.facing)}</p>
+                  <p className="mt-0.5 text-xs text-faint">Direction of the main entrance / plot frontage</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {tiles.map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface p-3">
@@ -214,10 +256,10 @@ export default async function PropertyPage({ params }: Props) {
           {showConstruction && p.constructionStage !== "completed" && (
             <section className="card p-5" aria-labelledby="construction">
               <div className="flex items-center justify-between gap-3">
-                <h2 id="construction" className="text-lg font-bold">
+                <h2 id="construction" className="text-2xl">
                   Construction status
                 </h2>
-                <span className="text-2xl font-bold">{percent}%</span>
+                <span className="font-mono text-2xl">{percent}%</span>
               </div>
               <div
                 className="mt-4 h-3 overflow-hidden rounded-full bg-surface-2"
@@ -237,7 +279,7 @@ export default async function PropertyPage({ params }: Props) {
 
           {p.description && (
             <section aria-labelledby="about-property">
-              <h2 id="about-property" className="mb-3 text-lg font-bold">
+              <h2 id="about-property" className="mb-3 text-2xl">
                 About this property
               </h2>
               <p className="whitespace-pre-line leading-relaxed text-muted">{p.description}</p>
@@ -246,7 +288,7 @@ export default async function PropertyPage({ params }: Props) {
 
           {amenities.length > 0 && (
             <section aria-labelledby="rooms">
-              <h2 id="rooms" className="mb-3 text-lg font-bold">
+              <h2 id="rooms" className="mb-3 text-2xl">
                 Rooms & features
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -263,7 +305,7 @@ export default async function PropertyPage({ params }: Props) {
             <section className="card p-5" aria-labelledby="approval">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-5" />
-                <h2 id="approval" className="font-bold">
+                <h2 id="approval" className="text-xl">
                   Approval & documents
                 </h2>
               </div>
@@ -284,7 +326,7 @@ export default async function PropertyPage({ params }: Props) {
             <section className="card p-5" aria-labelledby="road">
               <div className="flex items-center gap-2">
                 <Route className="size-5" />
-                <h2 id="road" className="font-bold">
+                <h2 id="road" className="text-xl">
                   Road access
                 </h2>
               </div>
@@ -298,7 +340,7 @@ export default async function PropertyPage({ params }: Props) {
           <section className="card p-5" aria-labelledby="loan">
             <div className="flex items-center gap-2">
               <Wallet className="size-5" />
-              <h2 id="loan" className="font-bold">
+              <h2 id="loan" className="text-xl">
                 Bank loan
               </h2>
             </div>
@@ -334,7 +376,7 @@ export default async function PropertyPage({ params }: Props) {
           <section className="card p-5" aria-labelledby="location">
             <div className="flex items-center gap-2">
               <MapPin className="size-5" />
-              <h2 id="location" className="font-bold">
+              <h2 id="location" className="text-xl">
                 Location
               </h2>
             </div>
@@ -352,32 +394,47 @@ export default async function PropertyPage({ params }: Props) {
             </a>
           </section>
 
-          {videos.length > 0 && (
-            <section id="videos" className="scroll-mt-24" aria-labelledby="videos-title">
-              <h2 id="videos-title" className="mb-3 text-lg font-bold">
-                Videos
+          {(landmarks.length > 0 || sameArea > 0) && (
+            <section className="card p-5 md:p-6" aria-labelledby="locality">
+              <p className="eyebrow">Explore the locality</p>
+              <h2 id="locality" className="mt-2 text-2xl">
+                Around {p.locality}
               </h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                {videos.map((v) => {
-                  const yt = v.kind === "youtube" ? youtubeId(v.url) : null;
-                  return (
-                    <div key={v.id} className="overflow-hidden rounded-3xl border border-line/70 bg-black">
-                      {yt ? (
-                        <iframe
-                          className="aspect-video w-full"
-                          src={`https://www.youtube-nocookie.com/embed/${yt}`}
-                          title={`${p.title} video`}
-                          loading="lazy"
-                          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                          allowFullScreen
-                        />
-                      ) : v.kind === "video" ? (
-                        <video className="aspect-video w-full" src={v.url} controls preload="metadata" playsInline />
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
+              {landmarks.length > 0 && (
+                <ol className="mt-5 divide-y divide-line/60">
+                  {landmarks.map((l, i) => {
+                    const Icon = LANDMARK_ICON[l.kind] ?? Flag;
+                    return (
+                      <li key={l.name + i} className="flex items-center gap-3.5 py-3">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-gold-2">
+                          <Icon className="size-[18px]" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold">{l.name}</p>
+                          <p className="text-xs text-muted">{labelOf(LANDMARK_KINDS, l.kind)}</p>
+                        </div>
+                        <span className="dim-line hidden w-16 sm:block" aria-hidden="true" />
+                        <span className="shrink-0 font-mono text-sm text-gold-2">{formatKm(l.distanceKm)}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {sameArea > 0 && (
+                <Link
+                  href={`/properties?area=${encodeURIComponent(p.locality)}`}
+                  className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3.5 text-sm transition-colors hover:bg-surface-3"
+                >
+                  <span>
+                    <span className="font-semibold">
+                      {sameArea} more {sameArea === 1 ? "property" : "properties"}
+                    </span>{" "}
+                    <span className="text-muted">available in {p.locality}</span>
+                  </span>
+                  <ArrowRight className="size-4 shrink-0" />
+                </Link>
+              )}
+              {landmarks.length > 0 && <p className="mt-3 text-xs text-faint">Distances are approximate.</p>}
             </section>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, LoaderCircle, LocateFixed } from "lucide-react";
+import { ArrowRight, LoaderCircle, LocateFixed } from "@/components/glyphs";
 import { PropertyCard } from "@/components/PropertyCard";
 import type { PropertyCardData } from "@/lib/properties";
 

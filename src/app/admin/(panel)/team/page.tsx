@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Pencil, Plus, Trash } from "lucide-react";
+import { Pencil, Plus, Trash } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { displayPhone, initials } from "@/lib/format";
 import { ConfirmSubmit } from "@/components/admin/ui";

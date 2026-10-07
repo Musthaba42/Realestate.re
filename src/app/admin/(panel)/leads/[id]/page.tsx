@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Phone, Trash } from "lucide-react";
+import { ArrowLeft, ExternalLink, Phone, Trash } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { BHK_OPTIONS, FACINGS, LEAD_SOURCES, PREFERRED_TIMES, PROPERTY_STATUSES, PROPERTY_TYPES, labelOf } from "@/lib/constants";
 import { displayPhone, formatDateTime, formatINR, telLink, whatsappLink } from "@/lib/format";

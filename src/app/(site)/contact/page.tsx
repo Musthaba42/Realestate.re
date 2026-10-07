@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
-import { Clock, Mail, MapPin, Navigation, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, Navigation, Phone } from "@/components/glyphs";
 import { getSettings } from "@/lib/settings";
 import { LeadForm } from "@/components/site/LeadForm";
 import { displayPhone, mapsSearchLink, telLink, whatsappLink } from "@/lib/format";
-import { WhatsAppIcon } from "@/components/icons";
+import { FacebookIcon, InstagramIcon, WhatsAppIcon, YouTubeIcon } from "@/components/icons";
 
 export const metadata: Metadata = { title: "Contact Us" };
 
 export default async function ContactPage() {
   const s = await getSettings();
   const mapHref = s.mapsUrl || (s.address ? mapsSearchLink(s.address) : null);
+  const socials = [
+    s.instagramUrl && { href: s.instagramUrl, label: "Instagram", handle: handleOf(s.instagramUrl), Icon: InstagramIcon },
+    s.facebookUrl && { href: s.facebookUrl, label: "Facebook", handle: "Golden Groups", Icon: FacebookIcon },
+    s.youtubeUrl && { href: s.youtubeUrl, label: "YouTube", handle: handleOf(s.youtubeUrl), Icon: YouTubeIcon },
+    { href: whatsappLink(s.whatsappNumber), label: "WhatsApp", handle: displayPhone(s.whatsappNumber), Icon: WhatsAppIcon },
+  ].filter(Boolean) as { href: string; label: string; handle: string; Icon: typeof WhatsAppIcon }[];
   return (
     <div className="container-x pb-10 pt-6 md:pt-10">
       <p className="eyebrow">Contact</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-5xl">Talk to our team</h1>
+      <h1 className="mt-3 text-[40px] leading-tight md:text-6xl">Talk to our team</h1>
       <p className="mt-4 max-w-2xl leading-relaxed text-muted">Call, WhatsApp or leave a message — we usually respond within a few hours.</p>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_460px]">
@@ -75,10 +81,37 @@ export default async function ContactPage() {
               )}
             </div>
           )}
+
+          <section className="card p-5" aria-labelledby="follow-us">
+            <h2 id="follow-us" className="text-xl">
+              Follow us
+            </h2>
+            <p className="mt-1 text-sm text-muted">New listings, site-visit videos and offers, posted first on our pages.</p>
+            <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              {socials.map(({ href, label, handle, Icon }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 rounded-2xl border border-line/70 bg-surface-2 p-3 transition-colors hover:border-gold/60"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bg text-gold-2 transition-colors group-hover:bg-gold group-hover:text-on-gold">
+                      <Icon className="size-[18px]" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{label}</span>
+                      <span className="block truncate font-mono text-[11px] text-muted">{handle}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
 
         <div className="card h-fit p-5 md:p-7">
-          <h2 className="text-xl font-bold">Send us a message</h2>
+          <h2 className="text-2xl">Send us a message</h2>
           <p className="mb-5 mt-1 text-sm text-muted">We&apos;ll call you back.</p>
           <LeadForm
             source="contact"
@@ -90,4 +123,14 @@ export default async function ContactPage() {
       </div>
     </div>
   );
+}
+
+/** "@goldengroups_re" from a profile link (query strings dropped). */
+function handleOf(url: string): string {
+  try {
+    const seg = new URL(url).pathname.split("/").filter(Boolean)[0] ?? "";
+    return seg ? (seg.startsWith("@") ? seg : `@${seg}`) : new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }

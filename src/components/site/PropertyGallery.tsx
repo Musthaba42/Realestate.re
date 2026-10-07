@@ -2,29 +2,28 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Expand, Images, Play, Share2, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Expand, Images, Play, Share2, Video, X } from "@/components/glyphs";
 import { PropertyImage } from "@/components/PropertyImage";
 import { Portal } from "@/components/Portal";
 import { SoldStamp } from "@/components/SoldStamp";
+import { youtubeId } from "@/lib/format";
 
-type Img = { url: string; category: string };
+export type GalleryItem = { kind: "image" | "video" | "youtube"; url: string };
 
-export function PropertyGallery({
-  images,
-  title,
-  hasVideo,
-  sold = false,
-}: {
-  images: Img[];
-  title: string;
-  hasVideo: boolean;
-  sold?: boolean;
-}) {
+/**
+ * One swipeable slider for a property's videos and photos.
+ * Videos come first (the property opens on its walkthrough), then the photos.
+ */
+export function PropertyGallery({ items: raw, title, sold = false }: { items: GalleryItem[]; title: string; sold?: boolean }) {
+  const items = [...raw.filter((m) => m.kind !== "image"), ...raw.filter((m) => m.kind === "image")];
+  const images = items.filter((m) => m.kind === "image");
+  const videoCount = items.length - images.length;
+
   const [index, setIndex] = useState(0);
-  const [lightbox, setLightbox] = useState(false);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const track = useRef<HTMLDivElement>(null);
-  const count = images.length;
+  const count = items.length;
 
   const scrollTo = useCallback((i: number, smooth = true) => {
     const el = track.current;
@@ -38,6 +37,13 @@ export function PropertyGallery({
     const i = Math.round(el.scrollLeft / el.clientWidth);
     if (i !== index && i >= 0 && i < count) setIndex(i);
   }
+
+  // Stop a playing video when it is swiped away.
+  useEffect(() => {
+    track.current?.querySelectorAll<HTMLVideoElement>("video[data-slide]").forEach((v) => {
+      if (Number(v.dataset.slide) !== index && !v.paused) v.pause();
+    });
+  }, [index]);
 
   async function share() {
     const url = window.location.href;
@@ -65,33 +71,45 @@ export function PropertyGallery({
     );
   }
 
+  const current = items[index]!;
+  const isVideo = current.kind !== "image";
+  const position = isVideo ? `Video ${index + 1}/${videoCount}` : `Photo ${index - videoCount + 1}/${images.length}`;
+
   return (
     <div>
-      <div className="relative overflow-hidden rounded-[28px] bg-surface-2">
-        <div
-          ref={track}
-          onScroll={onScroll}
-          className="no-scrollbar flex aspect-[4/3.2] snap-x snap-mandatory overflow-x-auto md:aspect-[16/10]"
-        >
-          {images.map((img, i) => (
-            <button
-              key={img.url + i}
-              type="button"
-              className="relative h-full w-full shrink-0 snap-center"
-              onClick={() => {
-                setIndex(i);
-                setLightbox(true);
-              }}
-              aria-label={`Open photo ${i + 1} of ${count}`}
-            >
-              <PropertyImage
-                src={img.url}
-                alt={`${title} – photo ${i + 1}`}
-                priority={i === 0}
-                width={1280}
-                className="size-full object-cover"
-              />
-            </button>
+      <div className="relative overflow-hidden rounded-[28px] bg-black">
+        <div ref={track} onScroll={onScroll} className="no-scrollbar flex aspect-[4/3.2] snap-x snap-mandatory overflow-x-auto md:aspect-[16/10]">
+          {items.map((m, i) => (
+            <div key={m.url + i} className="relative h-full w-full shrink-0 snap-center snap-always">
+              {m.kind === "image" ? (
+                <button
+                  type="button"
+                  className="size-full"
+                  onClick={() => setLightbox(i - videoCount)}
+                  aria-label={`Open photo ${i - videoCount + 1} of ${images.length}`}
+                >
+                  <PropertyImage
+                    src={m.url}
+                    alt={`${title} – photo ${i - videoCount + 1}`}
+                    priority={i === 0}
+                    width={1280}
+                    className="size-full object-cover"
+                  />
+                </button>
+              ) : m.kind === "video" ? (
+                <video
+                  data-slide={i}
+                  className="size-full object-contain"
+                  src={`${m.url}#t=0.1`}
+                  controls
+                  playsInline
+                  preload={i === 0 ? "auto" : "metadata"}
+                  aria-label={`${title} – video ${i + 1}`}
+                />
+              ) : (
+                <YouTubeSlide url={m.url} title={title} />
+              )}
+            </div>
           ))}
         </div>
 
@@ -104,13 +122,20 @@ export function PropertyGallery({
             <button type="button" className="icon-btn" onClick={share} aria-label="Share this property">
               <Share2 className="size-[18px]" />
             </button>
-            <button type="button" className="icon-btn" onClick={() => setLightbox(true)} aria-label="View fullscreen">
-              <Expand className="size-[18px]" />
-            </button>
+            {images.length > 0 && (
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setLightbox(isVideo ? 0 : index - videoCount)}
+                aria-label="View photos fullscreen"
+              >
+                <Expand className="size-[18px]" />
+              </button>
+            )}
           </div>
         </div>
         {copied && (
-          <span className="badge absolute left-1/2 top-4 -translate-x-1/2" role="status">
+          <span className="badge absolute left-1/2 top-4 z-[3] -translate-x-1/2" role="status">
             Link copied
           </span>
         )}
@@ -122,7 +147,7 @@ export function PropertyGallery({
               className="icon-btn absolute left-3 top-1/2 z-[2] hidden -translate-y-1/2 md:inline-grid"
               onClick={() => scrollTo(Math.max(0, index - 1))}
               disabled={index === 0}
-              aria-label="Previous photo"
+              aria-label="Previous"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -131,48 +156,105 @@ export function PropertyGallery({
               className="icon-btn absolute right-3 top-1/2 z-[2] hidden -translate-y-1/2 md:inline-grid"
               onClick={() => scrollTo(Math.min(count - 1, index + 1))}
               disabled={index === count - 1}
-              aria-label="Next photo"
+              aria-label="Next"
             >
               <ChevronRight className="size-5" />
             </button>
           </>
         )}
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[2] flex items-end justify-between">
-          {hasVideo ? (
-            <a href="#videos" className="icon-btn pointer-events-auto" aria-label="Watch video">
-              <Play className="size-4 fill-current" />
-            </a>
+        {/* Labels sit at the top while a video shows, so they never cover its controls. */}
+        <div className={`pointer-events-none absolute inset-x-3 z-[2] flex items-center justify-between gap-2 ${isVideo ? "top-[3.75rem]" : "bottom-3"}`}>
+          {isVideo && index === videoCount - 1 && images.length > 0 ? (
+            <button type="button" onClick={() => scrollTo(videoCount)} className="badge pointer-events-auto gap-1.5 hover:bg-black/80">
+              Swipe for {images.length} photo{images.length === 1 ? "" : "s"} <ChevronRight className="size-3.5" />
+            </button>
           ) : (
             <span />
           )}
-          <span className="badge gap-1.5">
-            <Images className="size-3.5" /> {index + 1}/{count}
+          <span className="badge gap-1.5 font-mono tracking-wide">
+            {isVideo ? <Video className="size-3.5" /> : <Images className="size-3.5" />} {position}
           </span>
         </div>
       </div>
 
       {count > 1 && (
-        <div className="no-scrollbar mt-2.5 flex gap-2.5 overflow-x-auto">
-          {images.map((img, i) => (
+        <div className="no-scrollbar mt-2.5 flex gap-2.5 overflow-x-auto" aria-label="Videos and photos">
+          {items.map((m, i) => (
             <button
-              key={img.url + "thumb" + i}
+              key={m.url + "thumb" + i}
               type="button"
               onClick={() => scrollTo(i)}
-              aria-label={`Show photo ${i + 1}`}
+              aria-label={m.kind === "image" ? `Show photo ${i - videoCount + 1}` : `Show video ${i + 1}`}
               aria-current={i === index}
-              className={`h-[70px] w-[100px] shrink-0 overflow-hidden rounded-2xl border-2 transition md:h-[84px] md:w-[124px] ${
-                i === index ? "border-white" : "border-transparent opacity-70 hover:opacity-100"
+              className={`relative h-[70px] w-[100px] shrink-0 overflow-hidden rounded-2xl border-2 bg-black transition md:h-[84px] md:w-[124px] ${
+                i === index ? "border-gold" : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
-              <PropertyImage src={img.url} alt="" width={300} className="size-full object-cover" />
+              {m.kind === "image" ? (
+                <PropertyImage src={m.url} alt="" width={300} className="size-full object-cover" />
+              ) : m.kind === "youtube" && youtubeId(m.url) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={`https://i.ytimg.com/vi/${youtubeId(m.url)}/mqdefault.jpg`} alt="" className="size-full object-cover" />
+              ) : (
+                <video src={`${m.url}#t=0.1`} className="size-full object-cover" preload="metadata" muted playsInline tabIndex={-1} />
+              )}
+              {m.kind !== "image" && (
+                <span className="absolute inset-0 grid place-items-center bg-black/35">
+                  <span className="grid size-8 place-items-center rounded-full bg-gold text-on-gold">
+                    <Play className="size-3.5 fill-current" />
+                  </span>
+                </span>
+              )}
             </button>
           ))}
         </div>
       )}
 
-      {lightbox && <Portal><Lightbox images={images} start={index} title={title} onClose={(i) => { setLightbox(false); setIndex(i); scrollTo(i, false); }} /></Portal>}
+      {lightbox !== null && images.length > 0 && (
+        <Portal>
+          <Lightbox
+            images={images}
+            start={lightbox}
+            title={title}
+            onClose={(i) => {
+              setLightbox(null);
+              setIndex(i + videoCount);
+              scrollTo(i + videoCount, false);
+            }}
+          />
+        </Portal>
+      )}
     </div>
+  );
+}
+
+/** YouTube thumbnail until tapped, so the embedded player does not swallow swipes. */
+function YouTubeSlide({ url, title }: { url: string; title: string }) {
+  const [play, setPlay] = useState(false);
+  const id = youtubeId(url);
+  if (!id) return null;
+  if (play) {
+    return (
+      <iframe
+        className="size-full"
+        src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`}
+        title={`${title} video`}
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+      />
+    );
+  }
+  return (
+    <button type="button" className="relative size-full" onClick={() => setPlay(true)} aria-label="Play video">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" className="size-full object-cover" />
+      <span className="absolute inset-0 grid place-items-center bg-black/30">
+        <span className="grid size-16 place-items-center rounded-full bg-gold text-on-gold shadow-2xl">
+          <Play className="size-6 fill-current" />
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -182,7 +264,7 @@ function Lightbox({
   title,
   onClose,
 }: {
-  images: Img[];
+  images: GalleryItem[];
   start: number;
   title: string;
   onClose: (index: number) => void;
@@ -226,7 +308,7 @@ function Lightbox({
   return (
     <div className="animate-fade fixed inset-0 z-[60] flex flex-col bg-black" role="dialog" aria-modal="true" aria-label="Photo viewer">
       <div className="flex items-center justify-between p-3">
-        <span className="badge">
+        <span className="badge font-mono">
           {i + 1} / {count}
         </span>
         <button type="button" className="icon-btn" onClick={() => onClose(i)} aria-label="Close photo viewer">

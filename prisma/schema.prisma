@@ -70,6 +70,9 @@ model Property {
   description String?
   searchText  String  @default("")
 
+  // "Explore the locality": big landmarks nearby, typed in by the team.
+  landmarks Landmark[]
+
   source          String  @default("team") // team | seller_request
   sellerRequestId String? @db.ObjectId
 
@@ -83,6 +86,12 @@ model Property {
   @@index([type])
   @@index([status])
   @@index([isPublished])
+}
+
+type Landmark {
+  name       String
+  kind       String @default("other") // see LANDMARK_KINDS in src/lib/constants.ts
+  distanceKm Float
 }
 
 model PropertyMedia {

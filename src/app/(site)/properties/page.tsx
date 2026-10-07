@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SearchX } from "lucide-react";
+import { SearchX } from "@/components/glyphs";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchFilters, type FilterState } from "@/components/site/SearchFilters";
 import { LeadForm } from "@/components/site/LeadForm";

@@ -1,11 +1,12 @@
-import { Phone } from "lucide-react";
+import { Phone } from "@/components/glyphs";
 import type { TeamMember } from "@prisma/client";
 import { initials, telLink, whatsappLink } from "@/lib/format";
 import { WhatsAppIcon } from "@/components/icons";
 
-export function TeamCard({ m }: { m: TeamMember }) {
+/** `featured` = the founder: gold name and a black-on-gold position tag. */
+export function TeamCard({ m, featured = false }: { m: TeamMember; featured?: boolean }) {
   return (
-    <article className="card flex h-full flex-col p-2">
+    <article className={`card flex h-full flex-col p-2 ${featured ? "border-gold/45" : ""}`}>
       <div className="relative aspect-[4/4.2] overflow-hidden rounded-[22px] bg-surface-2">
         {m.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -17,8 +18,18 @@ export function TeamCard({ m }: { m: TeamMember }) {
         )}
       </div>
       <div className="flex flex-1 flex-col px-3 pb-3 pt-4">
-        <h3 className="text-lg font-semibold">{m.name}</h3>
-        <p className="text-sm text-muted">{m.role}</p>
+        {featured ? (
+          <>
+            <p className="eyebrow">Founder</p>
+            <h3 className="mt-2 font-display text-[26px] leading-tight text-foil">{m.name}</h3>
+            <p className="plaque mt-3 self-start leading-snug">{m.role}</p>
+          </>
+        ) : (
+          <>
+            <h3 className="font-display text-xl">{m.name}</h3>
+            <p className="text-sm text-muted">{m.role}</p>
+          </>
+        )}
         {m.bio && <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">{m.bio}</p>}
         {m.showContact && (m.phone || m.whatsapp) && (
           <div className="mt-4 flex gap-2">

@@ -139,7 +139,8 @@ export async function searchProperties(f: SearchFilters): Promise<PropertyCardDa
   if (f.sqmax !== undefined) and.push({ totalSqft: { lte: f.sqmax } });
   if (f.bhk !== undefined) and.push(f.bhk >= 5 ? { bhk: { gte: 5 } } : { bhk: f.bhk });
   if (f.facing) and.push({ facing: f.facing });
-  if (f.status) and.push({ status: f.status });
+  // "For sale" also covers properties that are still under construction.
+  if (f.status) and.push(f.status === "available" ? { status: { in: ["available", "under_construction"] } } : { status: f.status });
 
   const orderBy: Prisma.PropertyOrderByWithRelationInput[] =
     f.sort === "price_asc"
@@ -209,6 +210,19 @@ export async function localities(): Promise<string[]> {
     orderBy: { locality: "asc" },
   });
   return rows.map((r) => r.locality);
+}
+
+/** Areas with properties on sale right now, busiest first. */
+export async function localityCounts(limit = 12): Promise<{ locality: string; city: string; count: number }[]> {
+  const rows = await db.property.groupBy({
+    by: ["locality", "city"],
+    where: { isPublished: true, status: { in: OPEN_STATUSES } },
+    _count: { _all: true },
+  });
+  return rows
+    .map((r) => ({ locality: r.locality, city: r.city, count: r._count._all }))
+    .sort((a, b) => b.count - a.count || a.locality.localeCompare(b.locality))
+    .slice(0, limit);
 }
 
 export async function typeCounts(): Promise<Record<string, number>> {

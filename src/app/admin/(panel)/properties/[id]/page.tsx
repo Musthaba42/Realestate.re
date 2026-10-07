@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Trash } from "lucide-react";
+import { ArrowLeft, ExternalLink, Trash } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { PropertyForm } from "@/components/admin/PropertyForm";
 import { DocumentManager, MediaManager } from "@/components/admin/MediaManager";

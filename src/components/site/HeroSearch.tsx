@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { MapPin, Search, SlidersHorizontal } from "@/components/glyphs";
 import Link from "next/link";
 import { PROPERTY_TYPES } from "@/lib/constants";
 

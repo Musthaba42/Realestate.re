@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "@/components/glyphs";
 import {
   BUDGET_PRESETS,
   FACINGS,

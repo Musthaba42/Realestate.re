@@ -8,13 +8,14 @@ import {
   House,
   Landmark,
   LandPlot,
+  MapPin,
   Phone,
   ShieldCheck,
   Tag,
   Wallet,
-} from "lucide-react";
+} from "@/components/glyphs";
 import { getSettings } from "@/lib/settings";
-import { featuredProperties, localities, typeCounts } from "@/lib/properties";
+import { featuredProperties, localities, localityCounts, typeCounts } from "@/lib/properties";
 import { PropertyCard } from "@/components/PropertyCard";
 import { HeroSearch } from "@/components/site/HeroSearch";
 import { NearbySection } from "@/components/site/NearbySection";
@@ -30,7 +31,13 @@ const TYPE_TILES = [
 ];
 
 export default async function HomePage() {
-  const [s, featured, locs, counts] = await Promise.all([getSettings(), featuredProperties(6), localities(), typeCounts()]);
+  const [s, featured, locs, counts, areas] = await Promise.all([
+    getSettings(),
+    featuredProperties(6),
+    localities(),
+    typeCounts(),
+    localityCounts(12),
+  ]);
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const heroCards = featured.slice(0, 2);
 
@@ -41,9 +48,8 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-gold/[0.07] blur-3xl" />
         <div className="container-x relative grid items-center gap-10 pb-10 pt-8 md:pt-14 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-20">
           <div>
-            <h1 className="text-[34px] font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[56px]">
-              {s.heroTitle}
-            </h1>
+            <p className="eyebrow">{s.address ?? "Chennai, Tamil Nadu"}</p>
+            <h1 className="mt-4 text-[40px] leading-[1.04] sm:text-[56px] lg:text-[68px]">{s.heroTitle}</h1>
             {s.heroSubtitle && <p className="mt-4 max-w-xl text-base leading-relaxed text-muted md:text-lg">{s.heroSubtitle}</p>}
             <div className="mt-7 max-w-xl">
               <HeroSearch localities={locs} />
@@ -52,12 +58,12 @@ export default async function HomePage() {
               {total > 0 && (
                 <div className="rounded-2xl bg-surface/70 p-3.5">
                   <dt className="text-xs text-muted">Properties available</dt>
-                  <dd className="mt-1 text-base font-bold leading-tight sm:text-xl">{total}</dd>
+                  <dd className="mt-1 font-mono text-lg leading-tight text-gold-2 sm:text-2xl">{total}</dd>
                 </div>
               )}
               <div className="rounded-2xl bg-surface/70 p-3.5">
                 <dt className="text-xs text-muted">Loan support</dt>
-                <dd className="mt-1 text-base font-bold leading-tight sm:text-xl">Up to {s.loanMaxPercent}%*</dd>
+                <dd className="mt-1 font-mono text-lg leading-tight text-gold-2 sm:text-2xl">Up to {s.loanMaxPercent}%*</dd>
               </div>
             </dl>
           </div>
@@ -114,9 +120,9 @@ export default async function HomePage() {
                 </span>
               </div>
               <div>
-                <h3 className="font-semibold md:text-lg">{label}</h3>
+                <h3 className="font-display text-lg md:text-xl">{label}</h3>
                 <p className="mt-0.5 text-xs text-muted md:text-sm">{desc}</p>
-                <p className="mt-3 text-xs font-semibold text-muted">
+                <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-gold-2">
                   {counts[value] ? `${counts[value]} ${counts[value] === 1 ? "property" : "properties"}` : "New listings soon"}
                 </p>
               </div>
@@ -124,6 +130,38 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* EXPLORE LOCALITIES */}
+      {areas.length > 0 && (
+        <section className="container-x py-10 md:py-14" aria-labelledby="areas-title">
+          <p className="eyebrow">Explore localities</p>
+          <h2 id="areas-title" className="section-title mt-2">
+            Areas where we have property for sale
+          </h2>
+          <ul className="mt-6 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {areas.map((a) => (
+              <li key={a.locality + a.city}>
+                <Link
+                  href={`/properties?area=${encodeURIComponent(a.locality)}`}
+                  className="group flex items-center gap-3.5 rounded-2xl border border-line/60 bg-surface px-4 py-3.5 transition-colors hover:border-gold/50"
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-gold-2">
+                    <MapPin className="size-[18px]" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{a.locality}</span>
+                    <span className="block text-xs text-muted">{a.city}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-xs text-gold-2">
+                    {a.count} {a.count === 1 ? "listing" : "listings"}
+                  </span>
+                  <ArrowUpRight className="size-4 shrink-0 text-faint transition-colors group-hover:text-gold-2" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* FEATURED */}
       <section className="container-x py-10 md:py-14">
@@ -161,7 +199,7 @@ export default async function HomePage() {
             <span className="grid size-12 place-items-center rounded-2xl bg-surface-2">
               <Tag className="size-6" />
             </span>
-            <h2 className="mt-5 text-2xl font-bold tracking-tight">Have a property to sell?</h2>
+            <h2 className="mt-5 text-3xl">Have a property to sell?</h2>
             <p className="mt-2 leading-relaxed text-muted">
               Share your property details, photos and location. Our team will verify it and connect you with genuine buyers.
             </p>
@@ -175,7 +213,7 @@ export default async function HomePage() {
             <span className="grid size-12 place-items-center rounded-2xl bg-surface-2">
               <Wallet className="size-6" />
             </span>
-            <h2 className="mt-5 text-2xl font-bold tracking-tight">Need a home loan?</h2>
+            <h2 className="mt-5 text-3xl">Need a home loan?</h2>
             <p className="mt-2 leading-relaxed text-muted">
               Limited savings shouldn&apos;t stop you. We help you apply for financing of up to {s.loanMaxPercent}%* of the property value.
             </p>
@@ -194,13 +232,13 @@ export default async function HomePage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: BadgeCheck, title: "Verified approvals", text: "DTCP / CMDA badges appear only after we check the documents." },
-            { icon: Tag, title: "One fixed price", text: "Clear fixed price on every property — no confusing price ranges." },
+            { icon: Tag, title: "Negotiable price", text: "A clear price on every property, and room to negotiate it with the owner." },
             { icon: Wallet, title: "Loan assistance", text: "We work with leading banks to help you get the right loan." },
             { icon: FileText, title: "End-to-end support", text: "Site visits, negotiation, documentation and registration." },
           ].map(({ icon: Icon, title, text }) => (
             <div key={title} className="card p-5">
-              <Icon className="size-6" />
-              <h3 className="mt-4 font-semibold">{title}</h3>
+              <Icon className="size-7 text-gold-2" />
+              <h3 className="mt-4 font-display text-xl">{title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{text}</p>
             </div>
           ))}
@@ -209,9 +247,9 @@ export default async function HomePage() {
 
       {/* CONTACT CTA */}
       <section className="container-x py-10 md:py-14">
-        <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-gold-2 via-gold to-gold-3 p-7 text-on-gold md:p-12">
+        <div className="on-gold relative overflow-hidden rounded-[32px] bg-gradient-to-br from-gold-2 via-gold to-gold-3 p-7 text-on-gold md:p-12">
           <ShieldCheck className="absolute -right-6 -top-6 size-48 text-black/[0.06]" />
-          <h2 className="relative max-w-xl text-2xl font-bold tracking-tight md:text-4xl">
+          <h2 className="relative max-w-xl text-3xl md:text-5xl">
             Didn&apos;t find what you need? Talk to us directly.
           </h2>
           <p className="relative mt-3 max-w-xl text-on-gold/80">

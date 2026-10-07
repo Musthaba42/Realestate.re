@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Hand, Phone, Search, X } from "lucide-react";
+import { Hand, Phone, Search, X } from "@/components/glyphs";
 import { LeadForm } from "./LeadForm";
 import { WhatsAppIcon } from "@/components/icons";
 import { Portal } from "@/components/Portal";

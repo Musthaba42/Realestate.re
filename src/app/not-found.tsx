@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { House, Search } from "lucide-react";
+import { House, Search } from "@/components/glyphs";
 
 export default function NotFound() {
   return (

@@ -14,7 +14,9 @@ import {
   APPROVAL_TYPES,
   CONSTRUCTION_STAGES,
   FACINGS,
+  LANDMARK_KINDS,
   LEAD_STATUSES,
+  MAX_LANDMARKS,
   MEDIA_CATEGORIES,
   PROPERTY_STATUSES,
   PROPERTY_TYPES,
@@ -83,6 +85,26 @@ function parseMediaJson(json: string): { kind: string; url: string }[] {
 }
 
 // ---------- properties ----------
+/** Landmark rows from the property form (parallel landmarkName / landmarkKind / landmarkKm fields). */
+function parseLandmarks(fd: FormData) {
+  const names = fd.getAll("landmarkName");
+  const kinds = fd.getAll("landmarkKind");
+  const kms = fd.getAll("landmarkKm");
+  const out: { name: string; kind: string; distanceKm: number }[] = [];
+  for (let i = 0; i < names.length && out.length < MAX_LANDMARKS; i++) {
+    const name = String(names[i] ?? "").trim().slice(0, 80);
+    const km = Number(String(kms[i] ?? "").replace(",", "."));
+    if (!name || !Number.isFinite(km) || km < 0 || km > 500) continue;
+    const kind = String(kinds[i] ?? "");
+    out.push({
+      name,
+      kind: LANDMARK_KINDS.some((k) => k.value === kind) ? kind : "other",
+      distanceKm: Math.round(km * 10) / 10,
+    });
+  }
+  return out.sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
 function fail(error: string) {
   return { error, data: null } as const;
 }
@@ -170,6 +192,7 @@ function parseProperty(fd: FormData) {
     isFeatured: bool(fd, "isFeatured"),
     isPublished: bool(fd, "isPublished"),
     description: str(fd, "description", 5000),
+    landmarks: parseLandmarks(fd),
   };
   if (data.constructionStage === "completed" && data.constructionPercent === null) data.constructionPercent = 100;
   return { data, error: null };

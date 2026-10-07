@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Hand, MapPin, Phone, Search, X } from "lucide-react";
+import { Hand, MapPin, Phone, Search, X } from "@/components/glyphs";
 
 const KEY = "gg_welcome_seen_v1";
 
 const STEPS = [
   { icon: Search, title: "Choose type & area", text: "Select land, house, apartment or commercial and the area you want." },
-  { icon: MapPin, title: "Explore properties", text: "Photos, videos, price, approvals, road and loan details, all in one page." },
+  { icon: MapPin, title: "Explore properties", text: "Videos, photos, price, approvals, road, loan and nearby landmarks, all in one page." },
   { icon: Hand, title: "Tap “I am Interested”", text: "Share just your name and phone number. That's it." },
   { icon: Phone, title: "We call you", text: "Our team arranges the site visit, loan support and documentation." },
 ];

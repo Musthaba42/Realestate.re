@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eye, EyeOff, Pencil, Plus, Star } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Star } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { PROPERTY_TYPES, labelOf } from "@/lib/constants";
 import { formatPriceShort } from "@/lib/format";

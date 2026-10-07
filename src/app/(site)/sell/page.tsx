@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, Handshake, LogIn, Phone, UserPlus, Users } from "lucide-react";
+import { BadgeCheck, Handshake, LogIn, Phone, UserPlus, Users } from "@/components/glyphs";
 import { SellForm } from "@/components/site/SellForm";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";

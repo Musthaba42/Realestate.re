@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Phone } from "lucide-react";
+import { Phone } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { LEAD_SOURCES, LEAD_STATUSES, PREFERRED_TIMES, labelOf } from "@/lib/constants";
 import { displayPhone, formatDateTime, telLink, whatsappLink } from "@/lib/format";

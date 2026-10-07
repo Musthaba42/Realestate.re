@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react";
+import { CircleCheck, LoaderCircle, TriangleAlert } from "@/components/glyphs";
 import type { FormState } from "@/app/admin/actions";
 
 /**
