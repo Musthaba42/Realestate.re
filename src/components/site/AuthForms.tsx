@@ -16,7 +16,6 @@ export function LoginForm({ next }: { next: string }) {
           required
           autoComplete="username"
           inputMode="email"
-          placeholder="98765 43210"
         />
       </label>
       <label className="block">
@@ -52,14 +51,13 @@ export function SignupForm({ next }: { next: string }) {
             inputMode="tel"
             autoComplete="tel-national"
             maxLength={14}
-            placeholder="98765 43210"
           />
         </div>
         <span className="hint">Our team calls this number about your property.</span>
       </label>
       <label className="block">
-        <span className="label">Email (optional)</span>
-        <input name="email" type="email" className="input" autoComplete="email" />
+        <span className="label">Email *</span>
+        <input name="email" type="email" className="input" required maxLength={120} autoComplete="email" />
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">

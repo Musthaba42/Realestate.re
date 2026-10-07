@@ -53,20 +53,20 @@ export async function signupAction(_prev: FormState, fd: FormData): Promise<Form
 
   if (name.length < 2) return { error: "Please enter your name." };
   if (!phone) return { error: "Please enter a valid 10-digit mobile number." };
-  if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) return { error: "Please enter a valid email, or leave it empty." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) return { error: "Please enter a valid email address." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
   if (password !== confirm) return { error: "The two passwords do not match." };
 
   if (await db.user.findFirst({ where: { OR: [{ login: phone }, { phone }] } })) {
     return { error: "An account with this mobile number already exists. Please log in." };
   }
-  if (emailRaw && (await db.user.findFirst({ where: { OR: [{ login: emailRaw }, { email: emailRaw }] } }))) {
+  if (await db.user.findFirst({ where: { OR: [{ login: emailRaw }, { email: emailRaw }] } })) {
     return { error: "An account with this email already exists. Please log in." };
   }
 
   // Sign-ups are always the "user" role. Only the seeded account is an admin.
   const user = await db.user.create({
-    data: { login: phone, name, phone, email: emailRaw || null, passwordHash: await bcrypt.hash(password, 12), role: "user" },
+    data: { login: phone, name, phone, email: emailRaw, passwordHash: await bcrypt.hash(password, 12), role: "user" },
   });
   await startSession(user);
   redirect(destination("user", safeNext(text(fd, "next", 300))));

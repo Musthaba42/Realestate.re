@@ -186,7 +186,7 @@ export function LoanForm({
         </label>
         <label className="block">
           <span className="label">Mobile number *</span>
-          <input name="phone" className="input" required type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" />
+          <input name="phone" className="input" required type="tel" inputMode="tel" autoComplete="tel" />
         </label>
       </div>
       <label className="block">

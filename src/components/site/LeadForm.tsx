@@ -121,7 +121,6 @@ export function LeadForm({
             inputMode="tel"
             autoComplete="tel-national"
             maxLength={14}
-            placeholder="98765 43210"
           />
         </div>
       </label>

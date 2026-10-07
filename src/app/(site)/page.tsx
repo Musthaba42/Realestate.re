@@ -15,7 +15,7 @@ import {
   Wallet,
 } from "@/components/glyphs";
 import { getSettings } from "@/lib/settings";
-import { featuredProperties, localities, localityCounts, typeCounts } from "@/lib/properties";
+import { featuredProperties, localities, localityCounts } from "@/lib/properties";
 import { PropertyCard } from "@/components/PropertyCard";
 import { HeroSearch } from "@/components/site/HeroSearch";
 import { NearbySection } from "@/components/site/NearbySection";
@@ -31,13 +31,7 @@ const TYPE_TILES = [
 ];
 
 export default async function HomePage() {
-  const [s, featured, locs, counts, areas] = await Promise.all([
-    getSettings(),
-    featuredProperties(6),
-    localities(),
-    typeCounts(),
-    localityCounts(12),
-  ]);
+  const [s, featured, locs, areas] = await Promise.all([getSettings(), featuredProperties(6), localities(), localityCounts(12)]);
   const heroCards = featured.slice(0, 2);
 
   return (
@@ -113,9 +107,6 @@ export default async function HomePage() {
               <div>
                 <h3 className="font-display text-lg md:text-xl">{label}</h3>
                 <p className="mt-0.5 text-xs text-muted md:text-sm">{desc}</p>
-                <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-gold-2">
-                  {counts[value] ? `${counts[value]} ${counts[value] === 1 ? "property" : "properties"}` : "New listings soon"}
-                </p>
               </div>
             </Link>
           ))}
@@ -142,9 +133,6 @@ export default async function HomePage() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{a.locality}</span>
                     <span className="block text-xs text-muted">{a.city}</span>
-                  </span>
-                  <span className="shrink-0 font-mono text-xs text-gold-2">
-                    {a.count} {a.count === 1 ? "listing" : "listings"}
                   </span>
                   <ArrowUpRight className="size-4 shrink-0 text-faint transition-colors group-hover:text-gold-2" />
                 </Link>

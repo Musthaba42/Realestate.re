@@ -74,11 +74,11 @@ export function TeamForm({ member }: { member?: TeamMember | null }) {
         </label>
         <label className="block">
           <span className="label">Phone</span>
-          <input name="phone" type="tel" className="input" defaultValue={m?.phone ?? ""} placeholder="98765 43210" />
+          <input name="phone" type="tel" className="input" defaultValue={m?.phone ?? ""} />
         </label>
         <label className="block">
           <span className="label">WhatsApp</span>
-          <input name="whatsapp" type="tel" className="input" defaultValue={m?.whatsapp ?? ""} placeholder="98765 43210" />
+          <input name="whatsapp" type="tel" className="input" defaultValue={m?.whatsapp ?? ""} />
         </label>
         <label className="block">
           <span className="label">Email</span>
