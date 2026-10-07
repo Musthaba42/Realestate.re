@@ -1,0 +1,24 @@
+# MongoDB connection string.
+# MongoDB Atlas: Atlas -> Database -> Connect -> Drivers, then add the database name (/goldengroups) before the '?':
+#   mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/goldengroups?retryWrites=true&w=majority
+# Local development (npm run db:local):
+DATABASE_URL="mongodb://goldengroupsestate_db_user:Password123@ac-fwlybhu-shard-00-00.wk6b8nf.mongodb.net:27017,ac-fwlybhu-shard-00-01.wk6b8nf.mongodb.net:27017,ac-fwlybhu-shard-00-02.wk6b8nf.mongodb.net:27017/goldengroups?ssl=true&authSource=admin&replicaSet=atlas-iclnrd-shard-0&retryWrites=true&w=majority"
+
+# Public URL of the site (used for WhatsApp links, SEO, sitemap)
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+
+# Secret used to sign admin login sessions (keep private, 32+ random chars)
+AUTH_SECRET="7b606213b72be75578cf42aad8e9a9083a78023377d3f0cc03becde4d801b2a6"
+
+# First admin login (created by: npm run db:seed). Change the password after first login.
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="Admin-d516eb0f035c"
+
+# --- Optional instant lead alerts (leave empty to disable) ---
+# Telegram: create a bot with @BotFather, then put the bot token and your chat id
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID=""
+# Email via Resend (https://resend.com)
+RESEND_API_KEY=""
+NOTIFY_EMAIL_TO=""
+NOTIFY_EMAIL_FROM=""
