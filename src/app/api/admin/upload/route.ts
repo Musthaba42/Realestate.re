@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateSiteData } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
 import { saveUpload, UploadError } from "@/lib/uploads";
@@ -64,6 +64,6 @@ export async function POST(req: Request) {
     }
   }
 
-  revalidatePath("/", "layout");
+  revalidateSiteData();
   return NextResponse.json({ ok: errors.length === 0, saved: saved.length, error: errors.join(" ") || undefined });
 }

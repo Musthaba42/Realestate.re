@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { SiteSettings } from "@prisma/client";
 import { db } from "./db";
+import { cachedSiteData } from "./cache";
 
 export type Settings = Omit<SiteSettings, "updatedAt">;
 
@@ -27,9 +28,11 @@ export const DEFAULT_SETTINGS: Settings = {
   loanMaxPercent: 90,
 };
 
-export const getSettings = cache(async (): Promise<Settings> => {
+const loadSettings = cachedSiteData(async (): Promise<Settings> => {
   const row = await db.siteSettings.findUnique({ where: { id: "site" } });
   if (!row) return DEFAULT_SETTINGS;
   const { updatedAt: _updatedAt, ...rest } = row;
   return rest;
-});
+}, "settings");
+
+export const getSettings = cache((): Promise<Settings> => loadSettings());

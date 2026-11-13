@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { FACINGS, OPEN_STATUSES, PROPERTY_STATUSES, PROPERTY_TYPE_VALUES } from "./constants";
 import { haversineKm, validCoords, type LatLng } from "./geo";
+import { cachedSiteData } from "./cache";
 
 export type SearchFilters = {
   type?: string;
@@ -63,7 +64,7 @@ export function filtersToQuery(f: SearchFilters): string {
     if (v === undefined || v === "" || (k === "sort" && v === "newest")) continue;
     if (k === "near") {
       const n = v as LatLng;
-      p.set("near", `,`);
+      p.set("near", `${n.lat.toFixed(2)},${n.lng.toFixed(2)}`);
       continue;
     }
     p.set(k, String(v));
@@ -181,7 +182,13 @@ export function isClosed(status: string): boolean {
   return status === "sold" || status === "not_available" || status === "reserved";
 }
 
-export async function featuredProperties(limit = 6): Promise<PropertyCardData[]> {
+// Home-page and filter data: cached (see lib/cache.ts) and refreshed whenever the team edits a property.
+export const featuredProperties = cachedSiteData(loadFeatured, "featured");
+export const localities = cachedSiteData(loadLocalities, "localities");
+export const localityCounts = cachedSiteData(loadLocalityCounts, "locality-counts");
+export const typeCounts = cachedSiteData(loadTypeCounts, "type-counts");
+
+async function loadFeatured(limit = 6): Promise<PropertyCardData[]> {
   const featured = await db.property.findMany({
     where: { isPublished: true, isFeatured: true, status: { notIn: ["sold", "not_available"] } },
     orderBy: { updatedAt: "desc" },
@@ -202,7 +209,7 @@ export async function featuredProperties(limit = 6): Promise<PropertyCardData[]>
   return [...featured, ...more];
 }
 
-export async function localities(): Promise<string[]> {
+async function loadLocalities(): Promise<string[]> {
   const rows = await db.property.findMany({
     where: { isPublished: true },
     select: { locality: true, city: true },
@@ -213,7 +220,7 @@ export async function localities(): Promise<string[]> {
 }
 
 /** Areas with properties on sale right now, busiest first. */
-export async function localityCounts(limit = 12): Promise<{ locality: string; city: string; count: number }[]> {
+async function loadLocalityCounts(limit = 12): Promise<{ locality: string; city: string; count: number }[]> {
   const rows = await db.property.groupBy({
     by: ["locality", "city"],
     where: { isPublished: true, status: { in: OPEN_STATUSES } },
@@ -225,7 +232,7 @@ export async function localityCounts(limit = 12): Promise<{ locality: string; ci
     .slice(0, limit);
 }
 
-export async function typeCounts(): Promise<Record<string, number>> {
+async function loadTypeCounts(): Promise<Record<string, number>> {
   const rows = await db.property.groupBy({
     by: ["type"],
     where: { isPublished: true, status: { notIn: ["sold", "not_available"] } },

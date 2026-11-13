@@ -279,6 +279,7 @@ export const FileText = make(
 export const Inbox = make("Inbox", <path d="M3.5 13.5 6 5h12l2.5 8.5v6h-17zM3.5 13.5h5l1 2.5h5l1-2.5h5" />);
 export const Trash = make("Trash", <path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 14h9l1-14M10.5 10.5v6M13.5 10.5v6" />);
 export const Pencil = make("Pencil", <path d="M4 20l1-4.5L15.5 5 19 8.5 8.5 19zM13.5 7l3.5 3.5M3 20.5h4" />);
+export const RotateCw = make("RotateCw", <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4.5H15" />);
 export const Upload = make("Upload", <path d="M12 15V4.5M7.5 9 12 4.5 16.5 9M4 14v6h16v-6" />);
 export const ImagePlus = make(
   "ImagePlus",

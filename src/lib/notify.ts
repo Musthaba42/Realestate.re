@@ -34,13 +34,44 @@ async function sendTelegram(text: string): Promise<void> {
 }
 
 async function sendEmail(subject: string, text: string): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
   const to = process.env.NOTIFY_EMAIL_TO;
+  if (!to) return;
+  await sendEmailTo(to.split(",").map((s) => s.trim()), subject, text);
+}
+
+/** Which instant-alert channels are configured (shown on the admin dashboard). */
+export function alertChannels(): { telegram: boolean; email: boolean } {
+  return {
+    telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
+    email: Boolean(process.env.RESEND_API_KEY && process.env.NOTIFY_EMAIL_FROM && process.env.NOTIFY_EMAIL_TO),
+  };
+}
+
+/** True when emails can be sent (Resend key + sender address). */
+export function emailEnabled(): boolean {
+  return Boolean(process.env.RESEND_API_KEY && process.env.NOTIFY_EMAIL_FROM);
+}
+
+/** Send a plain-text email through Resend. Returns false if not configured or it failed. */
+export async function sendEmailTo(to: string | string[], subject: string, text: string): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
   const from = process.env.NOTIFY_EMAIL_FROM;
-  if (!key || !to || !from) return;
-  await withTimeout("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ from, to: to.split(",").map((s) => s.trim()), subject, text }),
-  });
+  if (!key || !from) return false;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ from, to: Array.isArray(to) ? to : [to], subject, text }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) console.error(`[notify] api.resend.com responded ${res.status}`);
+    return res.ok;
+  } catch (err) {
+    console.error("[notify] email failed:", err instanceof Error ? err.message : err);
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
 }

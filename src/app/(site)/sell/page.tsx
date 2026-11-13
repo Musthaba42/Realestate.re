@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCheck, Handshake, LogIn, Phone, UserPlus, Users } from "@/components/glyphs";
-import { SellForm } from "@/components/site/SellForm";
+import { SellForm, type SellInitial } from "@/components/site/SellForm";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { telLink } from "@/lib/format";
 
@@ -11,8 +12,53 @@ export const metadata: Metadata = {
   description: "Submit your land, house, apartment or commercial property. Our team will verify it and find genuine buyers.",
 };
 
-export default async function SellPage() {
-  const [s, me] = await Promise.all([getSettings(), getCurrentUser()]);
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+/** ?edit=<id>: the owner updates a request the team marked "needs more info". */
+async function editableRequest(userId: string, raw: unknown): Promise<SellInitial | null> {
+  if (typeof raw !== "string" || !/^[a-f0-9]{24}$/.test(raw)) return null;
+  const r = await db.sellerRequest.findFirst({ where: { id: raw, userId, status: "needs_info" } });
+  if (!r) return null;
+  let media: { kind: string }[] = [];
+  try {
+    const parsed = JSON.parse(r.media) as unknown;
+    if (Array.isArray(parsed)) media = parsed as { kind: string }[];
+  } catch {}
+  const photoCount = media.filter((m) => m.kind === "image").length;
+  return {
+    id: r.id,
+    ref: r.ref,
+    ownerMessage: r.ownerMessage,
+    photoCount,
+    videoCount: media.length - photoCount,
+    title: r.title,
+    type: r.type,
+    locality: r.locality,
+    city: r.city,
+    district: r.district,
+    pincode: r.pincode,
+    address: r.address,
+    mapsUrl: r.mapsUrl,
+    totalSqft: r.totalSqft,
+    price: r.price,
+    isNegotiable: r.isNegotiable,
+    bhk: r.bhk,
+    bathrooms: r.bathrooms,
+    facing: r.facing,
+    constructionStage: r.constructionStage,
+    constructionPercent: r.constructionPercent,
+    roadType: r.roadType,
+    roadNote: r.roadNote,
+    approvalType: r.approvalType,
+    loanAvailable: r.loanAvailable,
+    description: r.description,
+    videoLink: r.videoLink,
+  };
+}
+
+export default async function SellPage({ searchParams }: Props) {
+  const [s, me, sp] = await Promise.all([getSettings(), getCurrentUser(), searchParams]);
+  const initial = me && sp.edit ? await editableRequest(me.id, sp.edit) : null;
 
   return (
     <div className="container-x pb-10 pt-6 md:pt-10">
@@ -53,7 +99,14 @@ export default async function SellPage() {
             </div>
           )}
 
-          {me && me.phone && <SellForm callHref={telLink(s.phone)} owner={{ name: me.name, phone: me.phone }} />}
+          {me && me.phone && (
+            <SellForm
+              key={initial?.id ?? "new"}
+              callHref={telLink(s.phone)}
+              owner={{ name: me.name, phone: me.phone }}
+              initial={initial ?? undefined}
+            />
+          )}
         </div>
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
           {[

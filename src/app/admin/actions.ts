@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { revalidateSiteData } from "@/lib/cache";
 import { nextSeq } from "@/lib/mongo";
 import { locate, validCoords } from "@/lib/geo";
 import { buildSearchText } from "@/lib/properties";
@@ -65,7 +66,7 @@ function isUrl(v: string | null): boolean {
   return v === null || /^https?:\/\/\S+$/i.test(v);
 }
 function refresh() {
-  revalidatePath("/", "layout");
+  revalidateSiteData();
 }
 function makeSlug(title: string, locality: string, code: string): string {
   const base = title.toLowerCase().includes(locality.toLowerCase()) ? title : `${title} ${locality}`;

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CirclePlus, ExternalLink, LogOut, MessageSquareWarning } from "@/components/glyphs";
+import { CirclePlus, ExternalLink, LogOut, MessageSquareWarning, Pencil } from "@/components/glyphs";
+import { ChangePasswordForm } from "@/components/site/AuthForms";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logoutAction } from "@/app/auth/actions";
@@ -95,6 +96,11 @@ export default async function AccountPage() {
                     </span>
                   </p>
                 )}
+                {r.status === "needs_info" && (
+                  <Link href={`/sell?edit=${r.id}`} className="btn btn-primary btn-sm mt-4">
+                    <Pencil className="size-4" /> Update details
+                  </Link>
+                )}
                 {listing?.isPublished && (
                   <Link href={`/properties/${listing.slug}`} className="btn btn-ghost btn-sm mt-4">
                     <ExternalLink className="size-4" /> View my listing ({listing.code})
@@ -105,6 +111,13 @@ export default async function AccountPage() {
           })}
         </ul>
       )}
+
+      <section className="card mt-10 p-5 md:p-7">
+        <h2 className="text-xl font-bold">Change password</h2>
+        <div className="mt-5 max-w-md">
+          <ChangePasswordForm />
+        </div>
+      </section>
     </div>
   );
 }

@@ -2,9 +2,9 @@
 
 The website and team dashboard for Golden Groups: selling land, houses, apartments and commercial property.
 
-**Tech:** Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · **MongoDB Atlas** (Prisma + GridFS for photos)
+**Tech:** Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · **MongoDB Atlas** (Prisma) · **Cloudflare R2** for photos and videos
 
-Everything is stored in MongoDB: properties, leads, owner submissions, team, settings **and all uploaded photos, videos and documents**. Nothing is saved on the server's disk.
+Data (properties, leads, owner submissions, team, settings, accounts) is stored in MongoDB. Uploaded photos, videos and documents go to Cloudflare R2 (or MongoDB GridFS when R2 is not set up). Nothing is saved on the server's disk.
 
 ---
 
@@ -21,6 +21,19 @@ Everything is stored in MongoDB: properties, leads, owner submissions, team, set
    ```
 
    If your password contains special characters (`@ : / ? # %`), URL-encode them. For example, `@` becomes `%40`.
+
+### Photos and videos: Cloudflare R2 (recommended)
+
+Photos and videos are kept in Cloudflare R2 (10 GB free) so they don't fill the 512 MB MongoDB free tier.
+Follow the steps in `.env.example` to create a private bucket and an API token, and fill in the `R2_*` values in `.env`.
+Without them, files are stored in MongoDB instead (fine for local development).
+
+To move files that are already in MongoDB to R2 (links stay the same; safe to run again):
+
+```bash
+npm run media:to-r2 -- --dry-run
+npm run media:to-r2
+```
 
 ---
 
@@ -89,9 +102,16 @@ Afterwards you can reorder photos, change the cover, add YouTube links and uploa
    - `DATABASE_URL`: your Atlas connection string
    - `NEXT_PUBLIC_SITE_URL`: your real domain, for example `https://goldengroups.in`
    - `AUTH_SECRET`: a long random string (one was generated for you)
-5. Optional instant alerts to your phone when a lead arrives:
+   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`: your Cloudflare R2 bucket
+5. Instant alerts to your phone when a lead arrives (the dashboard shows a warning until one is set):
    - **Telegram (free):** set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
-   - **Email (Resend):** set `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` and `NOTIFY_EMAIL_FROM`.
+   - **Email (Resend):** set `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` and `NOTIFY_EMAIL_FROM`. `RESEND_API_KEY` + `NOTIFY_EMAIL_FROM` also turn on **Forgot password** emails for customers.
+6. Optional spam protection: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (Cloudflare Turnstile, free). Public forms then show a small security check.
+
+**Good to know**
+- Form rate limits are stored in MongoDB (`rate_limits` collection), so they work on Vercel and with several servers.
+- Settings and home-page listings are cached. Changes in the dashboard show immediately; changes made directly in the database (scripts, Prisma Studio) show within 5 minutes.
+- When the team marks an owner's request **Needs more info**, the owner sees an **Update details** button under My account, and the request returns to *Pending Review* after they resubmit.
 
 ---
 
@@ -138,6 +158,6 @@ src/app/admin/              Team dashboard (admin only) and its server actions (
 src/app/api/leads           "I am Interested" / loan / contact / no-results leads
 src/app/api/sell            Sell Your Property submissions (photos stored privately)
 src/app/api/admin/upload    Dashboard photo/video/document uploads
-src/app/media/[...path]     Serves files from MongoDB GridFS (private files: admin only)
-src/lib/                    Database, MongoDB/GridFS, auth + roles, map positions (geo.ts), formatting (₹ Lakh/Crore), notifications
+src/app/media/[...path]     Serves files from Cloudflare R2 / MongoDB GridFS (private files: admin only)
+src/lib/                    Database, MongoDB/GridFS, R2 storage, auth + roles, map positions (geo.ts), formatting (₹ Lakh/Crore), notifications
 ```

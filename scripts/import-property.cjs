@@ -8,12 +8,20 @@
 //   { "title": "...", "type": "land", "locality": "...", "city": "...", "price": 123, "totalSqft": 1000,
 //     "media": [ { "file": "photo.jpeg", "category": "exterior" }, { "file": "clip.mp4", "category": "walkthrough" } ] }
 // Photos are resized (max 1920px, JPEG) before saving. Files not listed in "media" are ignored.
+// Files go to Cloudflare R2 when the R2_* variables are set, otherwise to MongoDB GridFS.
 
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const { AwsClient } = require("aws4fetch");
 const { PrismaClient } = require("@prisma/client");
 const { MongoClient, GridFSBucket, ObjectId } = require("mongodb");
+
+const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET } = process.env;
+const r2 =
+  R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET
+    ? new AwsClient({ accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY, service: "s3", region: "auto" })
+    : null;
 
 const FACINGS = ["east", "west", "north", "south", "north-east", "north-west", "south-east", "south-west"];
 const TYPES = ["land", "house", "apartment", "commercial"];
@@ -75,7 +83,7 @@ async function main() {
     const dup = await db.property.findFirst({ where: { title: spec.title, locality: spec.locality } });
     if (dup) fail(`Already imported as ${dup.code}. Delete it in Admin first if you want to import again.`);
 
-    // ---- store files in GridFS ----
+    // ---- store files (R2 or GridFS) ----
     let totalBytes = 0;
     for (const [i, m] of (spec.media || []).entries()) {
       let buf;
@@ -100,14 +108,31 @@ async function main() {
         mime = "image/jpeg";
       } else if (buf.length > 100 * 1024 * 1024) fail("video too large (>100 MB): " + label);
       const id = new ObjectId();
-      await new Promise((resolve, reject) => {
-        const up = bucket.openUploadStreamWithId(id, `properties/${id.toHexString().slice(-8)}.${ext}`, {
-          metadata: { kind, mime, private: false, folder: "properties" },
+      const metadata = { kind, mime, private: false, folder: "properties" };
+      if (r2) {
+        const key = `properties/${id.toHexString()}.${ext}`;
+        const res = await r2.fetch(`https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}/${key}`, {
+          method: "PUT",
+          body: buf,
+          headers: { "Content-Type": mime },
         });
-        up.once("finish", resolve);
-        up.once("error", reject);
-        up.end(buf);
-      });
+        if (!res.ok) fail(`R2 upload failed for ${label} (${res.status})`);
+        await mdb.collection("media.files").insertOne({
+          _id: id,
+          length: buf.length,
+          chunkSize: 0,
+          uploadDate: new Date(),
+          filename: key,
+          metadata: { ...metadata, storage: "r2", key },
+        });
+      } else {
+        await new Promise((resolve, reject) => {
+          const up = bucket.openUploadStreamWithId(id, `properties/${id.toHexString().slice(-8)}.${ext}`, { metadata });
+          up.once("finish", resolve);
+          up.once("error", reject);
+          up.end(buf);
+        });
+      }
       totalBytes += buf.length;
       stored.push({ id, url: `/media/${id.toHexString()}.${ext}`, kind, category: m.category || (kind === "video" ? "walkthrough" : "exterior"), order: i });
       console.log(`  stored ${label} -> ${kind}, ${(buf.length / 1024 / 1024).toFixed(2)} MB`);

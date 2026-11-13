@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CircleCheck, LoaderCircle, Phone } from "@/components/glyphs";
 import { CONSENT_TEXT, PREFERRED_TIMES } from "@/lib/constants";
 import { WhatsAppIcon } from "@/components/icons";
+import { Turnstile, resetTurnstile } from "@/components/site/Turnstile";
 
 type Props = {
   source: "interested" | "no_results" | "contact";
@@ -55,12 +56,14 @@ export function LeadForm({
           preferredTime: fd.get("preferredTime") ? String(fd.get("preferredTime")) : undefined,
           message: fd.get("message") ? String(fd.get("message")) : undefined,
           website: String(fd.get("website") ?? ""),
+          turnstileToken: fd.get("cf-turnstile-response") ? String(fd.get("cf-turnstile-response")) : undefined,
         }),
       });
       const data = (await res.json().catch(() => null)) as { ok: boolean; error?: string; whatsappUrl?: string } | null;
       if (!res.ok || !data?.ok) {
         setError(data?.error ?? "Something went wrong. Please try again or call us.");
         setState("idle");
+        resetTurnstile();
         return;
       }
       setWaUrl(data.whatsappUrl ?? "");
@@ -68,6 +71,7 @@ export function LeadForm({
     } catch {
       setError("Network error. Please check your connection and try again.");
       setState("idle");
+      resetTurnstile();
     }
   }
 
@@ -142,6 +146,7 @@ export function LeadForm({
           <textarea name="message" className="input" maxLength={1000} placeholder={messagePlaceholder} rows={3} />
         </label>
       )}
+      <Turnstile />
       {error && (
         <p className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
           {error}

@@ -2,11 +2,12 @@ import { Readable } from "node:stream";
 import { ObjectId } from "mongodb";
 import { cookies } from "next/headers";
 import { mediaBucket, mongoDb } from "@/lib/mongo";
+import { r2Get } from "@/lib/r2";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 import type { MediaMeta } from "@/lib/uploads";
 
-// Serves files stored in MongoDB GridFS, with HTTP Range support so videos can
-// be streamed and seeked (required by Safari / iPhone).
+// Serves uploaded files from Cloudflare R2 (or MongoDB GridFS for files not yet moved),
+// with HTTP Range support so videos can be streamed and seeked (required by Safari / iPhone).
 export async function GET(req: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path: parts } = await params;
   const m = parts.length === 1 ? /^([a-f0-9]{24})\.[a-z0-9]+$/i.exec(parts[0]!) : null;
@@ -35,7 +36,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ path: st
   };
   if (file.metadata?.mime === "application/pdf") headers["Content-Disposition"] = "inline";
 
-  const bucket = await mediaBucket();
+  // Requested byte range (inclusive), or null for the whole file.
+  let span: { start: number; end: number } | null = null;
   const range = req.headers.get("range");
   if (range) {
     const r = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
@@ -54,14 +56,33 @@ export async function GET(req: Request, { params }: { params: Promise<{ path: st
     if (start > end || start >= size) {
       return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
     }
-    // GridFS `end` is exclusive.
-    const stream = Readable.toWeb(bucket.openDownloadStream(id, { start, end: end + 1 })) as ReadableStream;
-    return new Response(stream, {
-      status: 206,
-      headers: { ...headers, "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(end - start + 1) },
-    });
+    span = { start, end };
   }
 
-  const stream = Readable.toWeb(bucket.openDownloadStream(id)) as ReadableStream;
-  return new Response(stream, { status: 200, headers: { ...headers, "Content-Length": String(size) } });
+  let body: ReadableStream | null;
+  if (file.metadata?.storage === "r2" && file.metadata.key) {
+    const res = await r2Get(file.metadata.key, span ? `bytes=${span.start}-${span.end}` : undefined);
+    if (!res.ok) {
+      console.error(`R2 read failed for ${file.metadata.key}: ${res.status}`);
+      return new Response("Not found", { status: 404 });
+    }
+    body = res.body;
+  } else {
+    const bucket = await mediaBucket();
+    // GridFS `end` is exclusive.
+    const stream = span ? bucket.openDownloadStream(id, { start: span.start, end: span.end + 1 }) : bucket.openDownloadStream(id);
+    body = Readable.toWeb(stream) as ReadableStream;
+  }
+
+  if (span) {
+    return new Response(body, {
+      status: 206,
+      headers: {
+        ...headers,
+        "Content-Range": `bytes ${span.start}-${span.end}/${size}`,
+        "Content-Length": String(span.end - span.start + 1),
+      },
+    });
+  }
+  return new Response(body, { status: 200, headers: { ...headers, "Content-Length": String(size) } });
 }

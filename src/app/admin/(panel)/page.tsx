@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Building, Inbox, Plus, Tag, TriangleAlert } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { alertChannels } from "@/lib/notify";
 import { LEAD_SOURCES, LEAD_STATUSES, PROPERTY_TYPES, SELLER_STATUSES, labelOf } from "@/lib/constants";
 import { displayPhone, formatDateTime, formatPriceShort } from "@/lib/format";
 import { Pill } from "@/components/admin/Pill";
@@ -18,7 +19,8 @@ export default async function DashboardPage() {
     db.sellerRequest.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
   ]);
 
-  const usingPlaceholders = s.whatsappNumber === "+919876543210" || s.phone === "+919876543210";
+  const alerts = alertChannels();
+  const usingPlaceholders =s.whatsappNumber === "+919876543210" || s.phone === "+919876543210";
 
   return (
     <div className="space-y-8">
@@ -40,6 +42,18 @@ export default async function DashboardPage() {
             <strong className="underline">update it in Settings</strong> before going live.
           </span>
         </Link>
+      )}
+
+      {!alerts.telegram && !alerts.email && (
+        <div className="flex items-start gap-3 rounded-3xl border border-warn/40 bg-warn/10 p-4 text-sm text-warn" role="alert">
+          <TriangleAlert className="mt-0.5 size-5 shrink-0" />
+          <span>
+            <strong>Instant lead alerts are off.</strong> New leads are saved here, but nobody is notified when one arrives (unless the buyer
+            also sends the WhatsApp message). Ask your developer to set <code className="font-mono">TELEGRAM_BOT_TOKEN</code> +{" "}
+            <code className="font-mono">TELEGRAM_CHAT_ID</code> (free) and/or the <code className="font-mono">RESEND_*</code> /{" "}
+            <code className="font-mono">NOTIFY_EMAIL_*</code> settings on the server. Email is also needed for “Forgot password”.
+          </span>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

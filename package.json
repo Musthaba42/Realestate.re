@@ -12,10 +12,12 @@
     "db:studio": "prisma studio",
     "setup": "prisma db push && tsx --env-file=.env prisma/seed.ts",
     "db:local": "node scripts/local-mongo.mjs",
+    "media:to-r2": "tsx --env-file=.env scripts/move-media-to-r2.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "aws4fetch": "1.0.20",
     "bcryptjs": "3.0.3",
     "jose": "6.2.12",
     "mongodb": "7.5.0",

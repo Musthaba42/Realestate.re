@@ -5,6 +5,7 @@ import { CircleCheck, Info, LoaderCircle, Phone } from "@/components/glyphs";
 import { CONSENT_TEXT, PREFERRED_TIMES } from "@/lib/constants";
 import { formatINR, formatPriceShort } from "@/lib/format";
 import { WhatsAppIcon } from "@/components/icons";
+import { Turnstile, resetTurnstile } from "@/components/site/Turnstile";
 
 type Opt = { id: string; label: string; price: number };
 
@@ -64,12 +65,14 @@ export function LoanForm({
           preferredTime: String(fd.get("preferredTime") ?? "anytime"),
           message: fd.get("message") ? String(fd.get("message")) : undefined,
           website: String(fd.get("website") ?? ""),
+          turnstileToken: fd.get("cf-turnstile-response") ? String(fd.get("cf-turnstile-response")) : undefined,
         }),
       });
       const data = (await res.json().catch(() => null)) as { ok: boolean; error?: string; whatsappUrl?: string } | null;
       if (!res.ok || !data?.ok) {
         setError(data?.error ?? "Something went wrong. Please try again.");
         setState("idle");
+        resetTurnstile();
         return;
       }
       setWaUrl(data.whatsappUrl ?? "");
@@ -77,6 +80,7 @@ export function LoanForm({
     } catch {
       setError("Network error. Please try again.");
       setState("idle");
+      resetTurnstile();
     }
   }
 
@@ -204,6 +208,7 @@ export function LoanForm({
         <textarea name="message" className="input" rows={3} maxLength={1000} placeholder="Salaried / business, monthly income, etc. (optional)" />
       </label>
 
+      <Turnstile />
       {error && (
         <p className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
           {error}

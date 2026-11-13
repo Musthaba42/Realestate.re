@@ -2,8 +2,11 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { mediaBucket, mongoDb } from "./mongo";
+import { r2Delete, r2Enabled, r2Put } from "./r2";
 
-// Files are stored in MongoDB (GridFS bucket "media") and served by /media/<id>.<ext>.
+// Files are stored in Cloudflare R2 (or MongoDB GridFS bucket "media" when R2 is not
+// configured) and served by /media/<id>.<ext>. Every file has a "media.files" record
+// with its type and privacy; R2 files are marked with metadata.storage = "r2".
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
@@ -12,7 +15,14 @@ export const MAX_DOC_BYTES = 15 * 1024 * 1024; // 15 MB
 export type FileKind = "image" | "video" | "pdf";
 type Detected = { kind: FileKind; ext: string; mime: string };
 
-export type MediaMeta = { kind: FileKind; mime: string; private: boolean; folder: string };
+export type MediaMeta = {
+  kind: FileKind;
+  mime: string;
+  private: boolean;
+  folder: string;
+  storage?: "r2";
+  key?: string; // R2 object key
+};
 
 /** Detect file type from its first bytes — never trust the browser's MIME type. */
 export function detectFileType(buf: Buffer): Detected | null {
@@ -57,9 +67,31 @@ export async function saveUpload(
   const limit = detected.kind === "image" ? MAX_IMAGE_BYTES : detected.kind === "pdf" ? MAX_DOC_BYTES : MAX_VIDEO_BYTES;
   if (buf.length > limit) throw new UploadError(`"${file.name}" is too large.`);
 
-  const bucket = await mediaBucket();
   const id = new ObjectId();
   const metadata: MediaMeta = { kind: detected.kind, mime: detected.mime, private: Boolean(opts.private), folder };
+  const url = `/media/${id.toHexString()}.${detected.ext}`;
+
+  if (r2Enabled()) {
+    const key = `${folder}/${id.toHexString()}.${detected.ext}`;
+    await r2Put(key, buf, detected.mime);
+    try {
+      const db = await mongoDb();
+      await db.collection("media.files").insertOne({
+        _id: id,
+        length: buf.length,
+        chunkSize: 0,
+        uploadDate: new Date(),
+        filename: key,
+        metadata: { ...metadata, storage: "r2", key } satisfies MediaMeta,
+      });
+    } catch (err) {
+      await r2Delete(key).catch(() => {});
+      throw err;
+    }
+    return { url, kind: detected.kind };
+  }
+
+  const bucket = await mediaBucket();
   await new Promise<void>((resolve, reject) => {
     const stream = bucket.openUploadStreamWithId(id, `${folder}/${randomBytes(4).toString("hex")}.${detected.ext}`, {
       metadata,
@@ -68,7 +100,7 @@ export async function saveUpload(
     stream.once("error", reject);
     stream.end(buf);
   });
-  return { url: `/media/${id.toHexString()}.${detected.ext}`, kind: detected.kind };
+  return { url, kind: detected.kind };
 }
 
 /** "/media/<24-hex>.<ext>" → ObjectId, or null for external URLs (e.g. YouTube). */
@@ -81,9 +113,17 @@ export async function deleteMediaFile(url: string): Promise<void> {
   const id = mediaIdFromUrl(url);
   if (!id) return;
   try {
-    await (await mediaBucket()).delete(id);
-  } catch {
-    /* already gone */
+    const db = await mongoDb();
+    const file = await db.collection<{ _id: ObjectId; metadata?: MediaMeta }>("media.files").findOne({ _id: id });
+    if (!file) return; // already gone
+    if (file.metadata?.storage === "r2" && file.metadata.key) {
+      await r2Delete(file.metadata.key);
+      await db.collection("media.files").deleteOne({ _id: id });
+    } else {
+      await (await mediaBucket()).delete(id);
+    }
+  } catch (err) {
+    console.error(`Could not delete media file ${url}:`, err);
   }
 }
 

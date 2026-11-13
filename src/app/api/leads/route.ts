@@ -5,6 +5,7 @@ import { nextSeq } from "@/lib/mongo";
 import { getSettings } from "@/lib/settings";
 import { notifyTeam } from "@/lib/notify";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { TURNSTILE_ERROR, verifyTurnstile } from "@/lib/turnstile";
 import { LEAD_SOURCES, PREFERRED_TIMES, PROPERTY_TYPES, labelOf } from "@/lib/constants";
 import { displayPhone, formatINR, normalizeIndianPhone, siteUrl, whatsappLink } from "@/lib/format";
 
@@ -19,6 +20,7 @@ const schema = z.object({
   propertyPrice: z.number().positive().max(1e11).optional(),
   budgetAvailable: z.number().min(0).max(1e11).optional(),
   website: z.string().optional(), // honeypot — must stay empty
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 export async function POST(req: Request) {
@@ -41,11 +43,15 @@ export async function POST(req: Request) {
   // Bots fill hidden fields: pretend success, store nothing.
   if (d.website) return NextResponse.json({ ok: true, whatsappUrl: whatsappLink(s.whatsappNumber) });
 
-  if (!rateLimit(`lead:${clientIp(req.headers)}`, 8, 10 * 60 * 1000)) {
+  const ip = clientIp(req.headers);
+  if (!(await rateLimit(`lead:${ip}`, 8, 10 * 60 * 1000))) {
     return NextResponse.json(
       { ok: false, error: "Too many requests. Please call or WhatsApp us directly." },
       { status: 429 },
     );
+  }
+  if (!(await verifyTurnstile(d.turnstileToken, ip))) {
+    return NextResponse.json({ ok: false, error: TURNSTILE_ERROR }, { status: 400 });
   }
 
   const phone = normalizeIndianPhone(d.phone);

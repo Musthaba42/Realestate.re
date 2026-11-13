@@ -1,5 +1,6 @@
 // Database schema — MongoDB (MongoDB Atlas in production).
-// Uploaded photos/videos/documents are stored in the same database (GridFS bucket "media").
+// Uploaded photos/videos/documents are stored in Cloudflare R2 (or, without R2, in GridFS
+// bucket "media"); their records live in the "media.files" collection. See src/lib/uploads.ts.
 
 generator client {
   provider = "prisma-client-js"

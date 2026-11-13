@@ -18,6 +18,7 @@ import {
 import { formatINR } from "@/lib/format";
 import { compressImage, uploadWithProgress } from "@/lib/client-image";
 import { WhatsAppIcon } from "@/components/icons";
+import { Turnstile, resetTurnstile } from "@/components/site/Turnstile";
 
 const MAX_VIDEO_MB = 100;
 
@@ -38,10 +39,52 @@ function Section({ n, title, desc, children }: { n: number; title: string; desc?
   );
 }
 
-export function SellForm({ callHref, owner }: { callHref: string; owner: { name: string; phone: string } }) {
-  const [type, setType] = useState("");
-  const [price, setPrice] = useState("");
-  const [stage, setStage] = useState("");
+/** An owner's earlier submission, when they are editing it after "needs more info". */
+export type SellInitial = {
+  id: string;
+  ref: number;
+  ownerMessage: string | null;
+  photoCount: number;
+  videoCount: number;
+  title: string | null;
+  type: string;
+  locality: string;
+  city: string;
+  district: string | null;
+  pincode: string | null;
+  address: string | null;
+  mapsUrl: string | null;
+  totalSqft: number;
+  price: number;
+  isNegotiable: boolean;
+  bhk: number | null;
+  bathrooms: number | null;
+  facing: string | null;
+  constructionStage: string | null;
+  constructionPercent: number | null;
+  roadType: string | null;
+  roadNote: string | null;
+  approvalType: string | null;
+  loanAvailable: string | null;
+  description: string | null;
+  videoLink: string | null;
+};
+
+export function SellForm({
+  callHref,
+  owner,
+  initial,
+}: {
+  callHref: string;
+  owner: { name: string; phone: string };
+  initial?: SellInitial;
+}) {
+  const [type, setType] = useState(initial?.type ?? "");
+  const [price, setPrice] = useState(initial ? String(initial.price) : "");
+  const [stage, setStage] = useState(initial?.constructionStage ?? "");
+  const maxPhotos = SELL_MAX_PHOTOS - (initial?.photoCount ?? 0);
+  const maxVideos = SELL_MAX_VIDEOS - (initial?.videoCount ?? 0);
+  const v = (x: string | number | null | undefined) => (x === null || x === undefined ? "" : String(x));
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
   const [busy, setBusy] = useState<"" | "preparing" | "uploading">("");
@@ -63,8 +106,8 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
     setError("");
     const incoming = Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name));
     if (incoming.length < list.length) setError("Some files were skipped. Please use JPG, PNG or WEBP photos.");
-    const room = SELL_MAX_PHOTOS - photos.length;
-    if (incoming.length > room) setError(`You can upload up to ${SELL_MAX_PHOTOS} photos.`);
+    const room = maxPhotos - photos.length;
+    if (incoming.length > room) setError(`You can upload up to ${SELL_MAX_PHOTOS} photos in total.`);
     const next = incoming.slice(0, Math.max(0, room)).map((file) => ({ file, preview: URL.createObjectURL(file) }));
     setPhotos((prev) => [...prev, ...next]);
   }
@@ -76,8 +119,8 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
     const tooBig = incoming.filter((f) => f.size > MAX_VIDEO_MB * 1024 * 1024);
     if (tooBig.length) setError(`Each video must be under ${MAX_VIDEO_MB} MB. For bigger videos, paste a YouTube or Google Drive link instead.`);
     const ok = incoming.filter((f) => f.size <= MAX_VIDEO_MB * 1024 * 1024 && /^video\/(mp4|quicktime|webm)$/.test(f.type));
-    const room = SELL_MAX_VIDEOS - videos.length;
-    if (ok.length > room) setError(`You can upload up to ${SELL_MAX_VIDEOS} videos.`);
+    const room = maxVideos - videos.length;
+    if (ok.length > room) setError(`You can upload up to ${SELL_MAX_VIDEOS} videos in total.`);
     setVideos((prev) => [...prev, ...ok.slice(0, Math.max(0, room))]);
   }
 
@@ -89,6 +132,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
     const fd = new FormData(form);
     fd.delete("photos_picker");
     fd.delete("videos_picker");
+    if (initial) fd.set("requestId", initial.id);
 
     setBusy("preparing");
     for (const p of photos) fd.append("photos", await compressImage(p.file));
@@ -105,12 +149,14 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
       if (res.status >= 400 || !res.body?.ok) {
         setError(res.body?.error ?? (res.status === 413 ? "Files are too large. Please upload fewer or smaller files." : "Something went wrong. Please try again."));
         setBusy("");
+        resetTurnstile();
         return;
       }
       setDone({ id: res.body.id ?? 0, whatsappUrl: res.body.whatsappUrl ?? "" });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError("Network error. Please check your connection and try again.");
+      resetTurnstile();
     }
     setBusy("");
   }
@@ -121,7 +167,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
         <span className="mx-auto grid size-16 place-items-center rounded-full bg-accent/15 text-accent">
           <CircleCheck className="size-9" />
         </span>
-        <h2 className="mt-4 text-2xl font-bold">Property submitted!</h2>
+        <h2 className="mt-4 text-2xl font-bold">{initial ? "Changes sent for review!" : "Property submitted!"}</h2>
         {done.id > 0 && <p className="mt-1 text-sm text-muted">Reference number: S-{done.id}</p>}
         <p className="mt-3 leading-relaxed text-muted">
           Our team will review your property and may call you to verify the details. Once it is approved, it will be shown on our
@@ -163,6 +209,17 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           My account
         </Link>
       </div>
+      {initial && (
+        <div className="card border-warn/40 p-4 md:p-5">
+          <p className="text-sm font-semibold text-warn">Updating request S-{initial.ref}</p>
+          {initial.ownerMessage && (
+            <p className="mt-1 text-sm text-muted">
+              Our team asked: <span className="text-ink">“{initial.ownerMessage}”</span>
+            </p>
+          )}
+          <p className="mt-1 text-xs text-faint">Change what is needed and press “Send changes”. It goes back to our team for review.</p>
+        </div>
+      )}
       <Section n={1} title="Property details">
         <fieldset>
           <legend className="label">Property type *</legend>
@@ -187,11 +244,19 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="block sm:col-span-2">
             <span className="label">Title</span>
-            <input name="title" className="input" maxLength={120} placeholder="e.g. 2 BHK house near Urapakkam station (optional)" />
+            <input name="title" className="input" maxLength={120} defaultValue={v(initial?.title)} placeholder="e.g. 2 BHK house near Urapakkam station (optional)" />
           </label>
           <label className="block">
             <span className="label">Total area (sq.ft) *</span>
-            <input name="totalSqft" className="input" required inputMode="decimal" pattern="[\d,.]+" placeholder="e.g. 1200" />
+            <input
+              name="totalSqft"
+              className="input"
+              required
+              inputMode="decimal"
+              pattern="[\d,.]+"
+              placeholder="e.g. 1200"
+              defaultValue={v(initial?.totalSqft)}
+            />
           </label>
           <label className="block">
             <span className="label">Expected price (₹) *</span>
@@ -213,10 +278,11 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
             <legend className="label">Is the price negotiable?</legend>
             <div className="flex gap-2">
               <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
-                <input type="radio" name="isNegotiable" value="yes" defaultChecked className="sr-only" /> Negotiable
+                <input type="radio" name="isNegotiable" value="yes" defaultChecked={initial?.isNegotiable ?? true} className="sr-only" /> Negotiable
               </label>
               <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
-                <input type="radio" name="isNegotiable" value="no" className="sr-only" /> Fixed – not negotiable
+                <input type="radio" name="isNegotiable" value="no" defaultChecked={initial?.isNegotiable === false} className="sr-only" /> Fixed – not
+                negotiable
               </label>
             </div>
           </fieldset>
@@ -224,7 +290,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           {isResidential && (
             <label className="block">
               <span className="label">Bedrooms (BHK)</span>
-              <select name="bhk" className="input" defaultValue="">
+              <select name="bhk" className="input" defaultValue={v(initial?.bhk)}>
                 <option value="">Select</option>
                 {BHK_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -237,12 +303,20 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           {type && !isLand && (
             <label className="block">
               <span className="label">Bathrooms</span>
-              <input name="bathrooms" className="input" type="number" min={0} max={20} placeholder="e.g. 2" />
+              <input
+                name="bathrooms"
+                className="input"
+                type="number"
+                min={0}
+                max={20}
+                placeholder="e.g. 2"
+                defaultValue={v(initial?.bathrooms)}
+              />
             </label>
           )}
           <label className="block">
             <span className="label">Facing</span>
-            <select name="facing" className="input" defaultValue="">
+            <select name="facing" className="input" defaultValue={v(initial?.facing)}>
               <option value="">Select</option>
               {FACINGS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -268,7 +342,15 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
               {stage && stage !== "completed" && stage !== "not_started" && (
                 <label className="block">
                   <span className="label">Completed (%)</span>
-                  <input name="constructionPercent" className="input" type="number" min={0} max={100} placeholder="e.g. 60" />
+                  <input
+                    name="constructionPercent"
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="e.g. 60"
+                    defaultValue={v(initial?.constructionPercent)}
+                  />
                 </label>
               )}
             </>
@@ -276,7 +358,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
 
           <label className="block">
             <span className="label">Road</span>
-            <select name="roadType" className="input" defaultValue="">
+            <select name="roadType" className="input" defaultValue={v(initial?.roadType)}>
               <option value="">Select</option>
               {ROAD_TYPES.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -287,11 +369,11 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           </label>
           <label className="block">
             <span className="label">Road details</span>
-            <input name="roadNote" className="input" maxLength={200} placeholder="e.g. 30 ft tar road" />
+            <input name="roadNote" className="input" maxLength={200} placeholder="e.g. 30 ft tar road" defaultValue={v(initial?.roadNote)} />
           </label>
           <label className="block">
             <span className="label">Approval</span>
-            <select name="approvalType" className="input" defaultValue="">
+            <select name="approvalType" className="input" defaultValue={v(initial?.approvalType)}>
               <option value="">Not sure / None</option>
               {APPROVAL_TYPES.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -302,7 +384,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           </label>
           <label className="block">
             <span className="label">Bank loan possible?</span>
-            <select name="loanAvailable" className="input" defaultValue="not_sure">
+            <select name="loanAvailable" className="input" defaultValue={initial?.loanAvailable ?? "not_sure"}>
               <option value="not_sure">Not sure</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
@@ -316,6 +398,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
               maxLength={2000}
               rows={4}
               placeholder="Nearby landmarks, special features, documents available, etc."
+              defaultValue={v(initial?.description)}
             />
           </label>
         </div>
@@ -325,33 +408,69 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="label">Area / locality *</span>
-            <input name="locality" className="input" required minLength={2} maxLength={100} placeholder="e.g. Urapakkam" />
+            <input
+              name="locality"
+              className="input"
+              required
+              minLength={2}
+              maxLength={100}
+              placeholder="e.g. Urapakkam"
+              defaultValue={v(initial?.locality)}
+            />
           </label>
           <label className="block">
             <span className="label">City *</span>
-            <input name="city" className="input" required minLength={2} maxLength={60} defaultValue="Chennai" />
+            <input name="city" className="input" required minLength={2} maxLength={60} defaultValue={initial?.city ?? "Chennai"} />
           </label>
           <label className="block">
             <span className="label">District</span>
-            <input name="district" className="input" maxLength={60} placeholder="e.g. Chengalpattu" />
+            <input name="district" className="input" maxLength={60} placeholder="e.g. Chengalpattu" defaultValue={v(initial?.district)} />
           </label>
           <label className="block">
             <span className="label">PIN code</span>
-            <input name="pincode" className="input" inputMode="numeric" pattern="\d{6}" maxLength={6} title="6-digit PIN code" />
+            <input
+              name="pincode"
+              className="input"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              title="6-digit PIN code"
+              defaultValue={v(initial?.pincode)}
+            />
           </label>
           <label className="block sm:col-span-2">
             <span className="label">Address</span>
-            <input name="address" className="input" maxLength={300} placeholder="Door no, street (not shown publicly)" />
+            <input
+              name="address"
+              className="input"
+              maxLength={300}
+              placeholder="Door no, street (not shown publicly)"
+              defaultValue={v(initial?.address)}
+            />
           </label>
           <label className="block sm:col-span-2">
             <span className="label">Google Maps link</span>
-            <input name="mapsUrl" className="input" type="url" inputMode="url" placeholder="https://maps.app.goo.gl/…" />
+            <input
+              name="mapsUrl"
+              className="input"
+              type="url"
+              inputMode="url"
+              placeholder="https://maps.app.goo.gl/…"
+              defaultValue={v(initial?.mapsUrl)}
+            />
             <span className="hint">Open Google Maps → drop a pin on the property → Share → Copy link.</span>
           </label>
         </div>
       </Section>
 
       <Section n={3} title="Photos & videos" desc="Clear photos help us sell faster. Photos are resized automatically.">
+        {initial && (initial.photoCount > 0 || initial.videoCount > 0) && (
+          <p className="mb-4 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">
+            We already have {initial.photoCount} photo{initial.photoCount === 1 ? "" : "s"}
+            {initial.videoCount ? ` and ${initial.videoCount} video${initial.videoCount === 1 ? "" : "s"}` : ""} from you. Anything you
+            add below is added to them.
+          </p>
+        )}
         <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
           {photos.map((p, i) => (
             <div key={p.preview} className="relative aspect-square overflow-hidden rounded-2xl bg-surface-2">
@@ -370,7 +489,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
               </button>
             </div>
           ))}
-          {photos.length < SELL_MAX_PHOTOS && (
+          {photos.length < maxPhotos && (
             <button
               type="button"
               onClick={() => photoInput.current?.click()}
@@ -395,7 +514,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
           }}
         />
         <p className="hint">
-          {photos.length}/{SELL_MAX_PHOTOS} photos · JPG, PNG or WEBP
+          {photos.length + (initial?.photoCount ?? 0)}/{SELL_MAX_PHOTOS} photos · JPG, PNG or WEBP
         </p>
 
         <div className="mt-6 space-y-2.5">
@@ -416,7 +535,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
               </button>
             </div>
           ))}
-          {videos.length < SELL_MAX_VIDEOS && (
+          {videos.length < maxVideos && (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => videoInput.current?.click()}>
               <Video className="size-4" /> Add video (max {MAX_VIDEO_MB} MB)
             </button>
@@ -436,10 +555,18 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
         </div>
         <label className="mt-5 block">
           <span className="label">Or paste a video link</span>
-          <input name="videoLink" className="input" type="url" inputMode="url" placeholder="YouTube / Google Drive link" />
+          <input
+            name="videoLink"
+            className="input"
+            type="url"
+            inputMode="url"
+            placeholder="YouTube / Google Drive link"
+            defaultValue={v(initial?.videoLink)}
+          />
         </label>
       </Section>
 
+      <Turnstile />
       {error && (
         <p className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
           {error}
@@ -449,7 +576,7 @@ export function SellForm({ callHref, owner }: { callHref: string; owner: { name:
       <div className="card p-5 md:p-7">
         <button type="submit" className="btn btn-primary btn-lg w-full" disabled={busy !== ""}>
           {busy && <LoaderCircle className="size-5 animate-spin" />}
-          {busy === "preparing" ? "Preparing photos…" : busy === "uploading" ? `Uploading… ${progress}%` : "Submit Property"}
+          {busy === "preparing" ? "Preparing photos…" : busy === "uploading" ? `Uploading… ${progress}%` : initial ? "Send changes" : "Submit Property"}
         </button>
         {busy === "uploading" && (
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
