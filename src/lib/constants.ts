@@ -93,7 +93,7 @@ export const MAX_LANDMARKS = 12;
 export const LEAD_SOURCES = [
   { value: "interested", label: "I am Interested" },
   { value: "no_results", label: "Search – no results" },
-  { value: "loan", label: "Loan enquiry" },
+  { value: "loan", label: "Loan enquiry (old)" },
   { value: "contact", label: "Contact form" },
 ] as const satisfies readonly Option[];
 
@@ -150,9 +150,6 @@ export function labelOf(list: readonly Option[], value: string | null | undefine
   if (!value) return "";
   return list.find((o) => o.value === value)?.label ?? value;
 }
-
-export const LOAN_DISCLAIMER =
-  "Loan/financing is subject to lender approval, applicant eligibility, property valuation and documentation. We assist with the process; we do not guarantee loan approval or amount.";
 
 export const CONSENT_TEXT =
   "By submitting, you agree to be contacted by our team by call or WhatsApp about this enquiry.";

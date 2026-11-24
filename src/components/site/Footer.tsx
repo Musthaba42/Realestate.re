@@ -1,19 +1,22 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone, Clock } from "@/components/glyphs";
+import { Mail, MapPin, Phone, Clock, UserRound } from "@/components/glyphs";
 import type { Settings } from "@/lib/settings";
-import { displayPhone, telLink, whatsappLink } from "@/lib/format";
-import { LOAN_DISCLAIMER, PROPERTY_TYPES } from "@/lib/constants";
+import { displayPhone, telLink } from "@/lib/format";
+import { PROPERTY_TYPES } from "@/lib/constants";
 import { Logo } from "@/components/Logo";
-import { FacebookIcon, InstagramIcon, WhatsAppIcon, YouTubeIcon } from "@/components/icons";
+import { SocialIcons } from "./SocialLinks";
 
 export function Footer({ s }: { s: Settings }) {
   const year = new Date().getFullYear();
   return (
     <footer className="mt-20 border-t border-line/60 bg-[#0c0b0a] pb-32 pt-14 md:pb-10">
-      <div className="container-x grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+      <div className="container-x grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
         <div className="space-y-4">
           <Logo name={s.businessName} />
-          {s.tagline && <p className="text-sm text-muted">{s.tagline}</p>}
+          {s.tagline && <p className="max-w-xs text-sm leading-relaxed text-muted">{s.tagline}</p>}
+          <Link href="/sell" className="btn btn-ghost btn-sm">
+            Sell your property
+          </Link>
         </div>
 
         <div>
@@ -28,7 +31,7 @@ export function Footer({ s }: { s: Settings }) {
             ))}
             <li>
               <Link href="/properties?status=under_construction" className="text-muted hover:text-ink">
-                Under Construction
+                Under Construction · For Sale
               </Link>
             </li>
             <li>
@@ -43,8 +46,8 @@ export function Footer({ s }: { s: Settings }) {
           <h3 className="eyebrow mb-4">Company</h3>
           <ul className="space-y-2.5 text-sm">
             {[
+              ["/", "Home"],
               ["/sell", "Sell Your Property"],
-              ["/loan", "Loan Assistance"],
               ["/about", "About Us"],
               ["/team", "Our Team"],
               ["/contact", "Contact Us"],
@@ -52,7 +55,7 @@ export function Footer({ s }: { s: Settings }) {
               ["/terms", "Terms of Service"],
             ].map(([href, label]) => (
               <li key={href}>
-                <Link href={href} className="text-muted hover:text-ink">
+                <Link href={href!} className="text-muted hover:text-ink">
                   {label}
                 </Link>
               </li>
@@ -61,10 +64,15 @@ export function Footer({ s }: { s: Settings }) {
         </div>
 
         <div>
-          <h3 className="eyebrow mb-4">Contact</h3>
+          <h3 className="eyebrow mb-4">Contact information</h3>
           <ul className="space-y-3 text-sm text-muted">
+            {s.contactPerson && (
+              <li className="flex items-start gap-2.5 text-ink">
+                <UserRound className="mt-0.5 size-4 shrink-0 text-gold-2" /> {s.contactPerson}
+              </li>
+            )}
             <li>
-              <a href={telLink(s.phone)} className="flex items-start gap-2.5 hover:text-ink">
+              <a href={telLink(s.phone)} className="flex items-start gap-2.5 font-mono hover:text-ink">
                 <Phone className="mt-0.5 size-4 shrink-0" /> {displayPhone(s.phone)}
               </a>
             </li>
@@ -86,35 +94,16 @@ export function Footer({ s }: { s: Settings }) {
               </li>
             )}
           </ul>
-          <div className="mt-5 flex gap-2" aria-label="Social media">
-            {s.instagramUrl && (
-              <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="Instagram">
-                <InstagramIcon className="size-[18px]" />
-              </a>
-            )}
-            {s.facebookUrl && (
-              <a href={s.facebookUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="Facebook">
-                <FacebookIcon className="size-[18px]" />
-              </a>
-            )}
-            {s.youtubeUrl && (
-              <a href={s.youtubeUrl} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="YouTube">
-                <YouTubeIcon className="size-[18px]" />
-              </a>
-            )}
-            <a href={whatsappLink(s.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="icon-btn icon-btn-solid text-gold-2 hover:bg-gold hover:text-on-gold" aria-label="WhatsApp">
-              <WhatsAppIcon className="size-[18px]" />
-            </a>
-          </div>
+          <p className="mb-2.5 mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-faint">Follow us</p>
+          <SocialIcons s={s} />
         </div>
       </div>
 
       <div className="container-x mt-12 space-y-3 border-t border-line/50 pt-6 text-xs leading-relaxed text-faint">
         {s.reraNumber && <p>RERA Registration No: {s.reraNumber}</p>}
-        <p>* {LOAN_DISCLAIMER}</p>
         <p>
-          Approval badges are shown only after our team has verified the documents. Property details are provided for
-          information and should be confirmed during the site visit and documentation.
+          All prices are negotiable. Property details are provided for information and should be confirmed during the site visit and
+          documentation.
         </p>
         <p>
           © {year} {s.businessName}. All rights reserved.

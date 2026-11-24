@@ -240,3 +240,64 @@ async function loadTypeCounts(): Promise<Record<string, number>> {
   });
   return Object.fromEntries(rows.map((r) => [r.type, r._count._all]));
 }
+
+export const spotlightProperties = cachedSiteData(loadSpotlight, "spotlight");
+export const localityGuide = cachedSiteData(loadLocalityGuide, "locality-guide");
+
+/** Newest open listings that have a cover photo (for the split-photo spotlight on the home page). */
+async function loadSpotlight(limit = 6): Promise<PropertyCardData[]> {
+  const rows = await db.property.findMany({
+    where: { isPublished: true, status: { in: OPEN_STATUSES } },
+    orderBy: { createdAt: "desc" },
+    select: cardSelect,
+    take: limit * 3,
+  });
+  return rows.filter((r) => r.media.length > 0).slice(0, limit);
+}
+
+export type LocalityGuideRow = {
+  locality: string;
+  city: string;
+  count: number;
+  /** Property types on sale in this area, e.g. ["land", "house"]. */
+  types: string[];
+  /** Big landmarks typed in by the team for properties here, nearest first (one per name). */
+  landmarks: { name: string; kind: string; distanceKm: number }[];
+};
+
+/**
+ * "Explore the locality": every area with property on sale, how many, which types,
+ * and how far the big landmarks are (the smallest distance the team gave for that landmark).
+ */
+async function loadLocalityGuide(limit = 12): Promise<LocalityGuideRow[]> {
+  const rows = await db.property.findMany({
+    where: { isPublished: true, status: { in: OPEN_STATUSES } },
+    select: { locality: true, city: true, type: true, landmarks: true },
+    take: 1000,
+  });
+  const byArea = new Map<string, LocalityGuideRow & { lm: Map<string, { name: string; kind: string; distanceKm: number }> }>();
+  for (const r of rows) {
+    const key = `${r.locality.trim().toLowerCase()}|${r.city.trim().toLowerCase()}`;
+    let a = byArea.get(key);
+    if (!a) {
+      a = { locality: r.locality.trim(), city: r.city.trim(), count: 0, types: [], landmarks: [], lm: new Map() };
+      byArea.set(key, a);
+    }
+    a.count++;
+    if (!a.types.includes(r.type)) a.types.push(r.type);
+    for (const l of r.landmarks ?? []) {
+      if (!l.name?.trim() || !Number.isFinite(l.distanceKm)) continue;
+      const k = l.name.trim().toLowerCase();
+      const prev = a.lm.get(k);
+      if (!prev || l.distanceKm < prev.distanceKm) a.lm.set(k, { name: l.name.trim(), kind: l.kind, distanceKm: l.distanceKm });
+    }
+  }
+  return [...byArea.values()]
+    .map(({ lm, ...a }) => ({
+      ...a,
+      types: PROPERTY_TYPE_VALUES.filter((t) => a.types.includes(t)),
+      landmarks: [...lm.values()].sort((x, y) => x.distanceKm - y.distanceKm).slice(0, 4),
+    }))
+    .sort((a, b) => b.count - a.count || a.locality.localeCompare(b.locality))
+    .slice(0, limit);
+}

@@ -81,8 +81,9 @@ export default async function EditPropertyPage({ params, searchParams }: Props) 
       )}
       {sp.approved && (
         <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">
-          Approved: this property is now live on the website. Check the details and photos below. Tick “Approval verified by our
-          team” only after checking the documents.
+          Approved as a <strong>hidden draft</strong> — it is NOT on the website yet. Check and edit the details, photos and videos
+          below, then tick “Show on website” and save when it is ready. Tick “Approval verified by our team” only after checking the
+          documents.
         </p>
       )}
 

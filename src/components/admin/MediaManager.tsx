@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, FileText, LoaderCircle, Play, Star, Trash, Upload } from "@/components/glyphs";
 import type { PropertyDocument, PropertyMedia } from "@prisma/client";
 import {
-  addYoutubeAction,
   deleteDocumentAction,
   deleteMediaAction,
   moveMediaAction,
@@ -15,7 +14,7 @@ import {
 import { MEDIA_CATEGORIES } from "@/lib/constants";
 import { youtubeId } from "@/lib/format";
 import { uploadPropertyFiles } from "@/lib/client-image";
-import { ConfirmSubmit, FormMessage, PendingButton, useFormAction } from "./ui";
+import { ConfirmSubmit, FormMessage } from "./ui";
 import { PropertyImage } from "@/components/PropertyImage";
 
 function useUploader(propertyId: string, kind: "media" | "document") {
@@ -44,13 +43,12 @@ export function MediaManager({ propertyId, media }: { propertyId: string; media:
   const [category, setCategory] = useState("exterior");
   const input = useRef<HTMLInputElement>(null);
   const { busy, progress, msg, upload } = useUploader(propertyId, "media");
-  const yt = useFormAction(addYoutubeAction);
 
   return (
     <section className="card p-5 md:p-6">
       <h2 className="font-bold">Photos & videos</h2>
       <p className="mt-0.5 text-sm text-muted">
-        The cover photo is shown on listing cards. On the property page, videos play first and photos follow in this order. Photos are resized automatically. Videos up to 100 MB — for longer videos, add a YouTube link.
+        The cover photo is shown on listing cards. On the property page, videos play first and photos follow in this order, in one slider. Use the arrows to reorder, ★ to set the cover and the bin to remove a file. Photos are resized automatically; videos up to 100 MB.
       </p>
 
       <div className="mt-5 flex flex-wrap items-end gap-3">
@@ -175,29 +173,6 @@ export function MediaManager({ propertyId, media }: { propertyId: string; media:
         </div>
       )}
 
-      <form onSubmit={yt.onSubmit} className="mt-6 grid gap-3 rounded-2xl bg-surface-2 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-        <input type="hidden" name="propertyId" value={propertyId} />
-        <label className="block">
-          <span className="label">Add YouTube video</span>
-          <input name="url" className="input" placeholder="https://youtu.be/…" required />
-        </label>
-        <label className="block">
-          <span className="label">Category</span>
-          <select name="category" className="input" defaultValue="walkthrough">
-            {MEDIA_CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <PendingButton pending={yt.pending} className="btn btn-soft" pendingText="Adding…">
-          Add video
-        </PendingButton>
-        <div className="sm:col-span-3">
-          <FormMessage state={yt.state} />
-        </div>
-      </form>
     </section>
   );
 }

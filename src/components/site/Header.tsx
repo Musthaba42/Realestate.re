@@ -9,7 +9,7 @@ import { displayPhone, telLink } from "@/lib/format";
 export const NAV = [
   { href: "/", label: "Home" },
   { href: "/properties", label: "Find Property" },
-  { href: "/loan", label: "Loan Assistance" },
+  { href: "/sell", label: "Sell Your Property", highlight: true },
   { href: "/about", label: "About" },
   { href: "/team", label: "Our Team" },
   { href: "/contact", label: "Contact" },
@@ -17,11 +17,21 @@ export const NAV = [
 
 export type HeaderUser = { name: string; role: "admin" | "user" } | null;
 
-export function Header({ businessName, phone, user }: { businessName: string; phone: string; user: HeaderUser }) {
+export function Header({
+  businessName,
+  phone,
+  contactPerson,
+  user,
+}: {
+  businessName: string;
+  phone: string;
+  contactPerson?: string | null;
+  user: HeaderUser;
+}) {
   const accountHref = user ? (user.role === "admin" ? "/admin" : "/account") : "/login";
   const accountLabel = user ? (user.role === "admin" ? "Dashboard" : "My account") : "Log in";
   const accountShort = user ? user.name.split(" ")[0]! : "Log in";
-  const menuItems = [NAV[0]!, NAV[1]!, { href: "/sell", label: "Sell Your Property" }, ...NAV.slice(2), { href: accountHref, label: accountLabel }];
+  const menuItems = [...NAV, { href: accountHref, label: accountLabel }];
   return (
     <StickyHeader>
       <div className="container-x flex h-[62px] items-center justify-between gap-3 transition-[height] duration-300 md:h-[74px] md:group-data-[scrolled]/header:h-[62px]">
@@ -34,7 +44,9 @@ export function Header({ businessName, phone, user }: { businessName: string; ph
               <Phone className="size-4" />
             </span>
             <span className="leading-tight">
-              <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-faint">Call us</span>
+              <span className="block max-w-[150px] truncate font-mono text-[9px] uppercase tracking-[0.2em] text-faint">
+                {contactPerson ? `Call ${contactPerson.split(" ")[0]}` : "Call us"}
+              </span>
               <span className="block font-mono text-[13px] text-ink">{displayPhone(phone)}</span>
             </span>
           </a>
@@ -54,7 +66,8 @@ export function Header({ businessName, phone, user }: { businessName: string; ph
             <CircleUserRound className="size-[18px]" />
           </Link>
 
-          <Link href="/sell" className="btn btn-primary btn-sm hidden shadow-[0_6px_20px_rgba(217,173,75,0.22)] sm:inline-flex">
+          {/* The Sell tab sits in the main nav on wide screens; this button stands in for it on smaller ones. */}
+          <Link href="/sell" className="btn btn-primary btn-sm hidden shadow-[0_6px_20px_rgba(217,173,75,0.22)] sm:inline-flex xl:hidden">
             <Tag className="size-4" />
             Sell Your Property
           </Link>

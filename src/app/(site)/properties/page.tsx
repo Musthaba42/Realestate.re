@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeTrail } from "@/components/site/HomeTrail";
 import { SearchX } from "@/components/glyphs";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchFilters, type FilterState } from "@/components/site/SearchFilters";
@@ -42,9 +43,10 @@ export default async function PropertiesPage({ searchParams }: Props) {
 
   return (
     <div className="container-x pb-10 pt-6 md:pt-10">
+      <HomeTrail items={[{ label: "Find property" }]} />
       <div className="mb-5">
         <p className="eyebrow">Find property</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight md:text-4xl">{heading}</h1>
+        <h1 className="mt-3 text-[32px] leading-tight md:text-5xl">{heading}</h1>
       </div>
 
       <div className="sticky top-16 z-30 -mx-4 bg-bg/90 px-4 py-3 backdrop-blur-xl md:top-[72px] md:-mx-6 md:px-6">

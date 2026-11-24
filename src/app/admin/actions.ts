@@ -10,7 +10,7 @@ import { nextSeq } from "@/lib/mongo";
 import { locate, validCoords } from "@/lib/geo";
 import { buildSearchText } from "@/lib/properties";
 import { deleteMediaFile, saveUpload, setMediaPrivacy, UploadError } from "@/lib/uploads";
-import { normalizeIndianPhone, slugify, youtubeId } from "@/lib/format";
+import { normalizeIndianPhone, slugify } from "@/lib/format";
 import {
   APPROVAL_TYPES,
   CONSTRUCTION_STAGES,
@@ -121,7 +121,6 @@ function parseProperty(fd: FormData) {
   const pincode = str(fd, "pincode", 10);
   const mapsUrl = str(fd, "mapsUrl", 1000);
   const constructionPercent = int(fd, "constructionPercent");
-  const loanPercent = int(fd, "loanPercent");
   const latIn = num(fd, "lat");
   const lngIn = num(fd, "lng");
 
@@ -137,8 +136,6 @@ function parseProperty(fd: FormData) {
   if (!isUrl(mapsUrl)) return fail("Google Maps link must start with https://");
   if (constructionPercent !== null && (Number.isNaN(constructionPercent) || constructionPercent < 0 || constructionPercent > 100))
     return fail("Construction % must be between 0 and 100.");
-  if (loanPercent !== null && (Number.isNaN(loanPercent) || loanPercent < 0 || loanPercent > 100))
-    return fail("Loan % must be between 0 and 100.");
 
   const intField = (k: string) => {
     const v = int(fd, k);
@@ -165,7 +162,7 @@ function parseProperty(fd: FormData) {
     lat: latIn,
     lng: lngIn,
     price: Math.round(price),
-    isNegotiable: bool(fd, "isNegotiable"),
+    isNegotiable: true, // every price is negotiable
     totalSqft,
     builtUpSqft: numField("builtUpSqft"),
     carpetSqft: numField("carpetSqft"),
@@ -186,9 +183,10 @@ function parseProperty(fd: FormData) {
     approvalType: opt(fd, "approvalType", APPROVAL_TYPES),
     approvalNumber: str(fd, "approvalNumber", 100),
     approvalVerified: bool(fd, "approvalVerified") && Boolean(opt(fd, "approvalType", APPROVAL_TYPES)),
-    loanAvailable: bool(fd, "loanAvailable"),
-    loanBanks: str(fd, "loanBanks", 200),
-    loanPercent: loanPercent === null ? null : loanPercent,
+    // Loan assistance was removed from the website.
+    loanAvailable: false,
+    loanBanks: null,
+    loanPercent: null,
     status,
     isFeatured: bool(fd, "isFeatured"),
     isPublished: bool(fd, "isPublished"),
@@ -321,20 +319,6 @@ export async function updateMediaCategoryAction(fd: FormData) {
   refresh();
 }
 
-export async function addYoutubeAction(_prev: FormState, fd: FormData): Promise<FormState> {
-  await requireAdmin();
-  const propertyId = idOf(fd, "propertyId");
-  const url = str(fd, "url", 500);
-  if (!url || !youtubeId(url)) return { error: "Paste a valid YouTube link (youtube.com/watch?v=… or youtu.be/…)." };
-  const category = opt(fd, "category", MEDIA_CATEGORIES) ?? "walkthrough";
-  const last = await db.propertyMedia.findFirst({ where: { propertyId }, orderBy: { sortOrder: "desc" } });
-  await db.propertyMedia.create({
-    data: { propertyId, kind: "youtube", category, url, sortOrder: (last?.sortOrder ?? -1) + 1 },
-  });
-  refresh();
-  return { ok: "Video added." };
-}
-
 export async function deleteDocumentAction(fd: FormData) {
   await requireAdmin();
   const id = idOf(fd);
@@ -381,7 +365,7 @@ export async function updateSellerNotesAction(_prev: FormState, fd: FormData): P
   if (!status) return { error: "Choose a status." };
   const r = await db.sellerRequest.findUnique({ where: { id }, select: { propertyId: true } });
   if (!r) return { error: "Request not found." };
-  if (status === "approved" && !r.propertyId) return { error: "Use “Approve & publish” to approve this request." };
+  if (status === "approved" && !r.propertyId) return { error: "Use “Approve & create draft” to approve this request." };
   await db.sellerRequest.update({
     where: { id },
     data: { status, adminNotes: str(fd, "adminNotes", 5000), ownerMessage: status === "approved" ? null : str(fd, "ownerMessage", 500) },
@@ -390,7 +374,10 @@ export async function updateSellerNotesAction(_prev: FormState, fd: FormData): P
   return { ok: "Saved." };
 }
 
-/** Approve an owner's submission: it becomes a live listing visible to everyone. */
+/**
+ * Approve an owner's submission. It becomes a HIDDEN draft listing that only the admin team can see:
+ * nothing is posted on the website automatically. The admin checks and edits it, then ticks “Published”.
+ */
 export async function approveSellerAction(fd: FormData) {
   await requireAdmin();
   const id = idOf(fd);
@@ -425,7 +412,7 @@ export async function approveSellerAction(fd: FormData) {
       lat: pos?.lat ?? null,
       lng: pos?.lng ?? null,
       price: r.price,
-      isNegotiable: r.isNegotiable,
+      isNegotiable: true,
       totalSqft: r.totalSqft,
       bhk: r.bhk,
       bedrooms: r.bhk,
@@ -437,28 +424,23 @@ export async function approveSellerAction(fd: FormData) {
       roadNote: r.roadNote,
       approvalType: r.approvalType,
       approvalVerified: false, // the team ticks this after checking documents
-      loanAvailable: r.loanAvailable === "yes",
+      loanAvailable: false,
       description: r.description,
       status: r.constructionStage && r.constructionStage !== "completed" ? "under_construction" : "available",
-      isPublished: true,
+      isPublished: false, // stays hidden until the admin publishes it
       source: "seller_request",
       sellerRequestId: r.id,
       searchText: buildSearchText({ title, locality: r.locality, city: r.city, district: r.district, pincode: r.pincode, address: r.address }),
       media: {
-        create: [
-          ...media.map((m, i) => {
-            const isCover = m.kind === "image" && !coverSet;
-            if (isCover) coverSet = true;
-            return { kind: m.kind, url: m.url, category: m.kind === "video" ? "walkthrough" : "exterior", sortOrder: i, isCover };
-          }),
-          ...(r.videoLink && youtubeId(r.videoLink)
-            ? [{ kind: "youtube", url: r.videoLink, category: "walkthrough", sortOrder: media.length }]
-            : []),
-        ],
+        create: media.map((m, i) => {
+          const isCover = m.kind === "image" && !coverSet;
+          if (isCover) coverSet = true;
+          return { kind: m.kind, url: m.url, category: m.kind === "video" ? "walkthrough" : "exterior", sortOrder: i, isCover };
+        }),
       },
     },
   });
-  // The owner's photos become public now that the listing is approved.
+  // The files can be served once the admin publishes the listing (the draft itself is not linked anywhere).
   await Promise.all(media.map((m) => setMediaPrivacy(m.url, false)));
   await db.sellerRequest.update({ where: { id: r.id }, data: { status: "approved", propertyId: created.id, ownerMessage: null } });
   refresh();
@@ -573,19 +555,17 @@ export async function saveSettingsAction(_prev: FormState, fd: FormData): Promis
   if (!heroTitle) return { error: "Home page headline is required." };
   if (!phone) return { error: "Enter a valid 10-digit phone number." };
   if (!whatsappNumber) return { error: "Enter a valid 10-digit WhatsApp number. Leads are sent here." };
-  const urls = ["mapsUrl", "instagramUrl", "facebookUrl", "youtubeUrl"].map((k) => [k, str(fd, k, 500)] as const);
+  const urls = ["mapsUrl", "instagramUrl", "facebookUrl"].map((k) => [k, str(fd, k, 500)] as const);
   for (const [k, v] of urls) if (!isUrl(v)) return { error: `${k.replace("Url", "")} link must start with https://` };
   const email = str(fd, "email", 120);
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Enter a valid email." };
-  const loanMaxPercent = int(fd, "loanMaxPercent");
-  if (loanMaxPercent === null || Number.isNaN(loanMaxPercent) || loanMaxPercent < 0 || loanMaxPercent > 100)
-    return { error: "Loan % must be between 0 and 100." };
 
   const data = {
     businessName,
     tagline: str(fd, "tagline", 120),
     phone,
     whatsappNumber,
+    contactPerson: str(fd, "contactPerson", 80),
     email,
     address: str(fd, "address", 300),
     workingHours: str(fd, "workingHours", 120),
@@ -593,11 +573,10 @@ export async function saveSettingsAction(_prev: FormState, fd: FormData): Promis
     heroSubtitle: str(fd, "heroSubtitle", 300),
     aboutText: str(fd, "aboutText", 3000),
     reraNumber: str(fd, "reraNumber", 100),
-    loanMaxPercent,
     mapsUrl: urls[0]![1],
     instagramUrl: urls[1]![1],
     facebookUrl: urls[2]![1],
-    youtubeUrl: urls[3]![1],
+    youtubeUrl: null, // YouTube is no longer shown on the website
   };
   await db.siteSettings.upsert({ where: { id: "site" }, update: data, create: { id: "site", ...data } });
   refresh();

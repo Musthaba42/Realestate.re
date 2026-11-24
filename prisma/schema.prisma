@@ -30,7 +30,7 @@ model Property {
   lat               Float? // approximate map position, used for the "near you" feature
   lng               Float?
 
-  // Pricing: ONE fixed price in rupees (no price range).
+  // Pricing: ONE price in rupees (no price range). Every price is shown as negotiable.
   price        Float
   isNegotiable Boolean @default(true)
 
@@ -214,18 +214,19 @@ model SiteSettings {
   tagline        String?
   phone          String
   whatsappNumber String
+  contactPerson  String? // name shown next to the phone number
   email          String?
   address        String?
   mapsUrl        String?
   workingHours   String?
   instagramUrl   String?
   facebookUrl    String?
-  youtubeUrl     String?
+  youtubeUrl     String? // no longer shown on the website
   heroTitle      String
   heroSubtitle   String?
   aboutText      String?
   reraNumber     String?
-  loanMaxPercent Int      @default(90)
+  loanMaxPercent Int      @default(90) // loan assistance was removed from the website
   updatedAt      DateTime @updatedAt
 }
 

@@ -46,7 +46,12 @@ export function HeroSearch({ localities }: { localities: string[] }) {
   }
 
   return (
-    <form onSubmit={submit} className="card p-3 sm:p-4" role="search" noValidate>
+    <form
+      onSubmit={submit}
+      className="rounded-card border border-white/10 bg-bg/75 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-4"
+      role="search"
+      noValidate
+    >
       <div className="flex gap-2">
         <label className="relative flex-1">
           <span className="sr-only">Area or locality</span>

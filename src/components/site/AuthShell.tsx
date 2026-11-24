@@ -2,12 +2,13 @@ import { featuredProperties } from "@/lib/properties";
 import { formatPriceShort } from "@/lib/format";
 import { PropertyImage } from "@/components/PropertyImage";
 import { CircleCheck, MapPin } from "@/components/glyphs";
+import { HomeTrail } from "./HomeTrail";
 
 const STEPS = [
   "Submit your property with photos and videos",
-  "Our team verifies the details and documents",
-  "Track the approval status under My account",
-  "Once approved, it goes live for genuine buyers",
+  "Only our admin team sees it — nothing is posted automatically",
+  "The admin reviews and edits the details with you",
+  "Track it under My account until it is published",
 ];
 
 /** Two-column frame for log-in / sign-up: a real listing on the left, the form on the right. */
@@ -29,7 +30,8 @@ export async function AuthShell({
 
   return (
     <div className="container-x pb-12 pt-6 md:pt-10">
-      <div className="grid overflow-hidden rounded-[32px] border border-line/60 bg-surface lg:grid-cols-[1.05fr_1fr]">
+      <HomeTrail items={[{ label: title }]} />
+      <div className="grid overflow-hidden rounded-card border border-line/60 bg-surface shadow-[0_30px_80px_rgba(0,0,0,0.35)] lg:grid-cols-[1.05fr_1fr]">
         <aside className="relative hidden min-h-[620px] lg:block" aria-label="Featured property">
           {cover ? (
             <PropertyImage src={cover} alt={show!.title} width={1200} priority className="absolute inset-0 size-full object-cover" />
@@ -44,7 +46,8 @@ export async function AuthShell({
                 <MapPin className="size-3.5" /> {show.locality} · <span className="font-mono">{formatPriceShort(show.price)}</span>
               </p>
             )}
-            <p className="font-display text-3xl leading-tight text-white">Selling with Golden Groups</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-gold-2">Property owner account</p>
+            <p className="mt-2 font-display text-[34px] leading-tight text-white">Selling with Golden Groups</p>
             <ul className="mt-5 grid gap-2.5">
               {STEPS.map((u) => (
                 <li key={u} className="flex items-center gap-3 text-[15px] text-white/85">

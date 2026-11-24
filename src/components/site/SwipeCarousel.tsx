@@ -6,12 +6,26 @@ import { ChevronLeft, ChevronRight } from "@/components/glyphs";
 /**
  * Horizontal swipe carousel: one slide per view on phones, `perView` on larger screens.
  * Slides snap into place; arrows and position dots for mouse and keyboard users.
+ * `autoPlay` (ms) moves it on by itself and loops; it pauses while hovered, focused or touched,
+ * when the tab is hidden, and never runs for visitors who prefer reduced motion.
  */
-export function SwipeCarousel({ children, label, perView = 3 }: { children: React.ReactNode; label: string; perView?: 2 | 3 }) {
+export function SwipeCarousel({
+  children,
+  label,
+  perView = 3,
+  autoPlay,
+}: {
+  children: React.ReactNode;
+  label: string;
+  perView?: 2 | 3;
+  autoPlay?: number;
+}) {
   const slides = Children.toArray(children);
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const [still, setStill] = useState(false);
   const count = slides.length;
   const last = Math.max(0, count - visible);
 
@@ -35,6 +49,22 @@ export function SwipeCarousel({ children, label, perView = 3 }: { children: Reac
     if (el && slide) el.scrollTo({ left: slide.offsetLeft - el.offsetLeft, behavior: "smooth" });
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setStill(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!autoPlay || paused || still || count <= visible) return;
+    const t = window.setTimeout(() => {
+      if (document.visibilityState === "visible") go(index >= last ? 0 : index + 1);
+    }, autoPlay);
+    return () => window.clearTimeout(t);
+  }, [autoPlay, paused, still, count, visible, index, last, go]);
+
   function onScroll() {
     const el = track.current;
     const first = el?.firstElementChild as HTMLElement | null;
@@ -46,7 +76,18 @@ export function SwipeCarousel({ children, label, perView = 3 }: { children: Reac
   const width = perView === 3 ? "md:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]" : "md:w-[calc((100%-1rem)/2)]";
 
   return (
-    <div role="region" aria-roledescription="carousel" aria-label={label}>
+    <div
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={label}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false);
+      }}
+    >
       <div
         ref={track}
         onScroll={onScroll}

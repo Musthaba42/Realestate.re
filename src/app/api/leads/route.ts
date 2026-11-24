@@ -10,15 +10,13 @@ import { LEAD_SOURCES, PREFERRED_TIMES, PROPERTY_TYPES, labelOf } from "@/lib/co
 import { displayPhone, formatINR, normalizeIndianPhone, siteUrl, whatsappLink } from "@/lib/format";
 
 const schema = z.object({
-  source: z.enum(["interested", "no_results", "contact", "loan"]),
+  source: z.enum(["interested", "no_results", "contact"]),
   propertyId: z.string().regex(/^[a-f0-9]{24}$/, "This property is no longer available.").optional(),
   name: z.string().trim().min(2, "Please enter your name").max(80),
   phone: z.string().trim().min(10, "Please enter a valid phone number").max(20),
   preferredTime: z.string().max(20).optional(),
   message: z.string().trim().max(1000).optional(),
   searchFilters: z.record(z.string().max(100)).optional(),
-  propertyPrice: z.number().positive().max(1e11).optional(),
-  budgetAvailable: z.number().min(0).max(1e11).optional(),
   website: z.string().optional(), // honeypot — must stay empty
   turnstileToken: z.string().max(2048).optional(),
 });
@@ -70,11 +68,6 @@ export async function POST(req: Request) {
   }
 
   const preferredTime = PREFERRED_TIMES.some((t) => t.value === d.preferredTime) ? d.preferredTime : undefined;
-  const propertyPrice = d.propertyPrice ?? property?.price;
-  const loanRequired =
-    d.source === "loan" && propertyPrice && d.budgetAvailable !== undefined
-      ? Math.max(0, propertyPrice - d.budgetAvailable)
-      : undefined;
 
   const lead = await db.lead.create({
     data: {
@@ -86,9 +79,6 @@ export async function POST(req: Request) {
       preferredTime,
       message: d.message || undefined,
       searchFilters: d.searchFilters ? JSON.stringify(d.searchFilters) : undefined,
-      propertyPrice: d.source === "loan" ? propertyPrice : undefined,
-      budgetAvailable: d.budgetAvailable,
-      loanRequired,
     },
   });
 
@@ -98,7 +88,7 @@ export async function POST(req: Request) {
     lines.push(
       "Hi, I am interested in this property.",
       `Property: ${property.title} – ${property.locality} (ID: ${property.code})`,
-      `Price: ${formatINR(property.price)}`,
+      `Price: ${formatINR(property.price)} (negotiable)`,
       `Link: ${siteUrl()}/properties/${property.slug}`,
     );
   } else if (d.source === "no_results") {
@@ -108,12 +98,6 @@ export async function POST(req: Request) {
     if (f.area) lines.push(`Area: ${f.area}`);
     if (f.max) lines.push(`Budget: up to ${formatINR(Number(f.max))}`);
     if (f.bhk) lines.push(`BHK: ${f.bhk}`);
-  } else if (d.source === "loan") {
-    lines.push("Hi, I need loan assistance.");
-    if (property) lines.push(`Property: ${property.title} (ID: ${property.code})`);
-    if (propertyPrice) lines.push(`Property price: ${formatINR(propertyPrice)}`);
-    if (d.budgetAvailable !== undefined) lines.push(`Amount I have: ${formatINR(d.budgetAvailable)}`);
-    if (loanRequired !== undefined) lines.push(`Loan needed: ${formatINR(loanRequired)}`);
   } else {
     lines.push("Hi, I have an enquiry.");
   }

@@ -45,6 +45,7 @@ export function SettingsForm({ s }: { s: Omit<SiteSettings, "updatedAt"> }) {
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <F label="Business name" name="businessName" value={s.businessName} required />
           <F label="Tagline" name="tagline" value={s.tagline} />
+          <F label="Contact person" name="contactPerson" value={s.contactPerson} hint="Shown next to the phone number on the website" />
           <F label="Phone (Call button)" name="phone" type="tel" value={s.phone} required />
           <F
             label="WhatsApp number (leads are sent here)"
@@ -59,16 +60,15 @@ export function SettingsForm({ s }: { s: Omit<SiteSettings, "updatedAt"> }) {
           <F label="Office address" name="address" value={s.address} wide />
           <F label="Office Google Maps link" name="mapsUrl" type="url" value={s.mapsUrl} wide />
           <F label="RERA registration no." name="reraNumber" value={s.reraNumber} hint="Shown in the footer when filled" />
-          <F label="Default loan financing (%)" name="loanMaxPercent" type="number" value={s.loanMaxPercent} required />
         </div>
       </section>
 
       <section className="card p-5 md:p-6">
         <h2 className="font-bold">Social media</h2>
+        <p className="mt-0.5 text-sm text-muted">Shown under the contact information on the Contact page and in the footer.</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <F label="Instagram link" name="instagramUrl" type="url" value={s.instagramUrl} placeholder="https://instagram.com/yourpage" />
           <F label="Facebook link" name="facebookUrl" type="url" value={s.facebookUrl} placeholder="https://facebook.com/yourpage" />
-          <F label="YouTube link" name="youtubeUrl" type="url" value={s.youtubeUrl} placeholder="https://youtube.com/@yourchannel" />
         </div>
       </section>
 

@@ -129,3 +129,8 @@ export function initials(name: string): string {
 export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
+
+/** 0.4 → "400 m", 1.5 → "1.5 km", 12 → "12 km" */
+export function formatKm(km: number): string {
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km % 1 === 0 ? km : km.toFixed(1)} km`;
+}

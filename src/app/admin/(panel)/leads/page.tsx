@@ -46,7 +46,7 @@ export default async function LeadsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Leads</h1>
-        <p className="mt-1 text-sm text-muted">Buyers who tapped “I am Interested”, loan requests, contact messages and search requests.</p>
+        <p className="mt-1 text-sm text-muted">Buyers who tapped “I am Interested”, contact messages and search requests.</p>
       </div>
 
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">

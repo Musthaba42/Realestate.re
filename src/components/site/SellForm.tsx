@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CircleCheck, ImagePlus, LoaderCircle, Phone, Video, X } from "@/components/glyphs";
+import { CircleCheck, LoaderCircle, Phone } from "@/components/glyphs";
+import { MediaTray, type TrayItem } from "@/components/MediaTray";
 import {
   APPROVAL_TYPES,
   BHK_OPTIONS,
@@ -22,7 +23,9 @@ import { Turnstile, resetTurnstile } from "@/components/site/Turnstile";
 
 const MAX_VIDEO_MB = 100;
 
-type Photo = { file: File; preview: string };
+type Photo = TrayItem;
+const PHOTO_RE = /^image\/(jpeg|png|webp)$/;
+const VIDEO_RE = /^video\/(mp4|quicktime|webm)$/;
 
 function Section({ n, title, desc, children }: { n: number; title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -86,7 +89,7 @@ export function SellForm({
   const maxVideos = SELL_MAX_VIDEOS - (initial?.videoCount ?? 0);
   const v = (x: string | number | null | undefined) => (x === null || x === undefined ? "" : String(x));
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [videos, setVideos] = useState<File[]>([]);
+  const [videos, setVideos] = useState<TrayItem[]>([]);
   const [busy, setBusy] = useState<"" | "preparing" | "uploading">("");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
@@ -94,7 +97,7 @@ export function SellForm({
   const photoInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
   const photosRef = useRef<Photo[]>([]);
-  photosRef.current = photos;
+  photosRef.current = [...photos, ...videos];
 
   const isResidential = RESIDENTIAL_TYPES.includes(type);
   const isLand = type === "land";
@@ -104,7 +107,7 @@ export function SellForm({
   function addPhotos(list: FileList | null) {
     if (!list) return;
     setError("");
-    const incoming = Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name));
+    const incoming = Array.from(list).filter((f) => PHOTO_RE.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name));
     if (incoming.length < list.length) setError("Some files were skipped. Please use JPG, PNG or WEBP photos.");
     const room = maxPhotos - photos.length;
     if (incoming.length > room) setError(`You can upload up to ${SELL_MAX_PHOTOS} photos in total.`);
@@ -117,11 +120,11 @@ export function SellForm({
     setError("");
     const incoming = Array.from(list);
     const tooBig = incoming.filter((f) => f.size > MAX_VIDEO_MB * 1024 * 1024);
-    if (tooBig.length) setError(`Each video must be under ${MAX_VIDEO_MB} MB. For bigger videos, paste a YouTube or Google Drive link instead.`);
-    const ok = incoming.filter((f) => f.size <= MAX_VIDEO_MB * 1024 * 1024 && /^video\/(mp4|quicktime|webm)$/.test(f.type));
+    if (tooBig.length) setError(`Each video must be under ${MAX_VIDEO_MB} MB. For bigger videos, paste a Google Drive link instead.`);
+    const ok = incoming.filter((f) => f.size <= MAX_VIDEO_MB * 1024 * 1024 && VIDEO_RE.test(f.type));
     const room = maxVideos - videos.length;
     if (ok.length > room) setError(`You can upload up to ${SELL_MAX_VIDEOS} videos in total.`);
-    setVideos((prev) => [...prev, ...ok.slice(0, Math.max(0, room))]);
+    setVideos((prev) => [...prev, ...ok.slice(0, Math.max(0, room)).map((file) => ({ file, preview: URL.createObjectURL(file) }))]);
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -136,7 +139,7 @@ export function SellForm({
 
     setBusy("preparing");
     for (const p of photos) fd.append("photos", await compressImage(p.file));
-    for (const v of videos) fd.append("videos", v);
+    for (const v of videos) fd.append("videos", v.file);
 
     setBusy("uploading");
     setProgress(0);
@@ -170,8 +173,9 @@ export function SellForm({
         <h2 className="mt-4 text-2xl font-bold">{initial ? "Changes sent for review!" : "Property submitted!"}</h2>
         {done.id > 0 && <p className="mt-1 text-sm text-muted">Reference number: S-{done.id}</p>}
         <p className="mt-3 leading-relaxed text-muted">
-          Our team will review your property and may call you to verify the details. Once it is approved, it will be shown on our
-          website for all buyers. You can follow the decision under “My account”. Your name and phone number are never shown publicly.
+          Your property has been sent to our admin team only — it is not posted on the website automatically. The admin will review
+          it, may call you to check or correct details, and then decide when to publish it. You can follow the decision under “My
+          account”. Your name and phone number are never shown publicly.
         </p>
         <div className="mt-6 grid gap-2.5">
           {done.whatsappUrl && (
@@ -274,18 +278,10 @@ export function SellForm({
               Your asking price (one amount, not a range). {priceNum > 0 ? <strong className="text-muted">{formatINR(priceNum)}</strong> : null}
             </span>
           </label>
-          <fieldset className="sm:col-span-2">
-            <legend className="label">Is the price negotiable?</legend>
-            <div className="flex gap-2">
-              <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
-                <input type="radio" name="isNegotiable" value="yes" defaultChecked={initial?.isNegotiable ?? true} className="sr-only" /> Negotiable
-              </label>
-              <label className="chip h-11 has-[:checked]:border-gold has-[:checked]:bg-gold has-[:checked]:font-semibold has-[:checked]:text-on-gold">
-                <input type="radio" name="isNegotiable" value="no" defaultChecked={initial?.isNegotiable === false} className="sr-only" /> Fixed – not
-                negotiable
-              </label>
-            </div>
-          </fieldset>
+          <input type="hidden" name="isNegotiable" value="yes" />
+          <p className="flex items-center rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold-2 sm:self-end">
+            Prices on our website are shown as negotiable.
+          </p>
 
           {isResidential && (
             <label className="block">
@@ -382,14 +378,6 @@ export function SellForm({
               ))}
             </select>
           </label>
-          <label className="block">
-            <span className="label">Bank loan possible?</span>
-            <select name="loanAvailable" className="input" defaultValue={initial?.loanAvailable ?? "not_sure"}>
-              <option value="not_sure">Not sure</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </select>
-          </label>
           <label className="block sm:col-span-2">
             <span className="label">Description</span>
             <textarea
@@ -463,7 +451,7 @@ export function SellForm({
         </div>
       </Section>
 
-      <Section n={3} title="Photos & videos" desc="Clear photos help us sell faster. Photos are resized automatically.">
+      <Section n={3} title="Photos & videos" desc="Clear photos help us sell faster. Before you submit you can reorder, replace or remove any photo or video, and choose the cover photo.">
         {initial && (initial.photoCount > 0 || initial.videoCount > 0) && (
           <p className="mb-4 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">
             We already have {initial.photoCount} photo{initial.photoCount === 1 ? "" : "s"}
@@ -471,36 +459,16 @@ export function SellForm({
             add below is added to them.
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-          {photos.map((p, i) => (
-            <div key={p.preview} className="relative aspect-square overflow-hidden rounded-2xl bg-surface-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.preview} alt={`Selected photo ${i + 1}`} className="size-full object-cover" />
-              <button
-                type="button"
-                className="icon-btn absolute right-1.5 top-1.5 size-7"
-                aria-label={`Remove photo ${i + 1}`}
-                onClick={() => {
-                  URL.revokeObjectURL(p.preview);
-                  setPhotos((prev) => prev.filter((x) => x !== p));
-                }}
-              >
-                <X className="size-3.5" />
-              </button>
-            </div>
-          ))}
-          {photos.length < maxPhotos && (
-            <button
-              type="button"
-              onClick={() => photoInput.current?.click()}
-              className="grid aspect-square place-items-center rounded-2xl border-2 border-dashed border-line text-muted transition-colors hover:border-faint hover:text-ink"
-            >
-              <span className="grid justify-items-center gap-1 text-xs font-medium">
-                <ImagePlus className="size-6" /> Add photos
-              </span>
-            </button>
-          )}
-        </div>
+        <MediaTray
+          items={photos}
+          setItems={setPhotos}
+          onAdd={() => photoInput.current?.click()}
+          canAdd={photos.length < maxPhotos}
+          addLabel="Add photos"
+          accept="image/jpeg,image/png,image/webp"
+          validate={(f) => (PHOTO_RE.test(f.type) ? null : "Please use a JPG, PNG or WEBP photo.")}
+          onError={setError}
+        />
         <input
           ref={photoInput}
           name="photos_picker"
@@ -517,29 +485,25 @@ export function SellForm({
           {photos.length + (initial?.photoCount ?? 0)}/{SELL_MAX_PHOTOS} photos · JPG, PNG or WEBP
         </p>
 
-        <div className="mt-6 space-y-2.5">
-          {videos.map((v, i) => (
-            <div key={v.name + i} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-sm">
-              <span className="flex min-w-0 items-center gap-2">
-                <Video className="size-4 shrink-0 text-muted" />
-                <span className="truncate">{v.name}</span>
-                <span className="shrink-0 text-faint">{(v.size / 1024 / 1024).toFixed(1)} MB</span>
-              </span>
-              <button
-                type="button"
-                className="text-muted hover:text-ink"
-                aria-label={`Remove video ${v.name}`}
-                onClick={() => setVideos((prev) => prev.filter((x) => x !== v))}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          ))}
-          {videos.length < maxVideos && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => videoInput.current?.click()}>
-              <Video className="size-4" /> Add video (max {MAX_VIDEO_MB} MB)
-            </button>
-          )}
+        <div className="mt-7">
+          <p className="label">Videos (max {maxVideos}, up to {MAX_VIDEO_MB} MB each)</p>
+          <MediaTray
+            items={videos}
+            setItems={setVideos}
+            onAdd={() => videoInput.current?.click()}
+            canAdd={videos.length < maxVideos}
+            addLabel="Add video"
+            accept="video/mp4,video/quicktime,video/webm"
+            showCover={false}
+            validate={(f) =>
+              !VIDEO_RE.test(f.type)
+                ? "Please use an MP4, MOV or WEBM video."
+                : f.size > MAX_VIDEO_MB * 1024 * 1024
+                  ? `Each video must be under ${MAX_VIDEO_MB} MB.`
+                  : null
+            }
+            onError={setError}
+          />
           <input
             ref={videoInput}
             name="videos_picker"
@@ -554,13 +518,13 @@ export function SellForm({
           />
         </div>
         <label className="mt-5 block">
-          <span className="label">Or paste a video link</span>
+          <span className="label">Or paste a Google Drive video link</span>
           <input
             name="videoLink"
             className="input"
             type="url"
             inputMode="url"
-            placeholder="YouTube / Google Drive link"
+            placeholder="Google Drive link"
             defaultValue={v(initial?.videoLink)}
           />
         </label>

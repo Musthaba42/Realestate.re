@@ -105,8 +105,7 @@ export default async function SellerRequestPage({ params, searchParams }: Props)
               {r.title && <Row label="Title">{r.title}</Row>}
               <Row label="Type">{labelOf(PROPERTY_TYPES, r.type)}</Row>
               <Row label="Expected price">
-                <strong>{formatINR(r.price)}</strong> {per ? <span className="text-muted">· {formatINR(per)}/sq.ft</span> : null} ·{" "}
-                {r.isNegotiable ? "Negotiable" : "Fixed"}
+                <strong>{formatINR(r.price)}</strong> {per ? <span className="text-muted">· {formatINR(per)}/sq.ft</span> : null} · Negotiable
               </Row>
               <Row label="Total area">{formatNumber(r.totalSqft)} sq.ft</Row>
               {r.bhk && <Row label="BHK">{r.bhk >= 5 ? "5+" : r.bhk} BHK</Row>}
@@ -122,7 +121,6 @@ export default async function SellerRequestPage({ params, searchParams }: Props)
                 <Row label="Road">{[r.roadType ? labelOf(ROAD_TYPES, r.roadType) : null, r.roadNote].filter(Boolean).join(" — ")}</Row>
               )}
               <Row label="Approval (owner says)">{r.approvalType ? labelOf(APPROVAL_TYPES, r.approvalType) : "Not sure / none"}</Row>
-              <Row label="Bank loan">{r.loanAvailable === "yes" ? "Yes" : r.loanAvailable === "no" ? "No" : "Not sure"}</Row>
               {r.description && (
                 <Row label="Description">
                   <span className="whitespace-pre-line">{r.description}</span>
@@ -183,10 +181,12 @@ export default async function SellerRequestPage({ params, searchParams }: Props)
               <>
                 <p className="text-sm text-muted">
                   Approved as {linked.code}.{" "}
-                  {linked.isPublished ? "It is live on the website." : "It is currently hidden from the website."}
+                  {linked.isPublished
+                    ? "It is live on the website."
+                    : "It is a hidden draft: edit it and tick “Show on website” when it is ready."}
                 </p>
                 <Link href={`/admin/properties/${linked.id}`} className="btn btn-primary w-full">
-                  Edit listing {linked.code}
+                  {linked.isPublished ? "Edit" : "Review & publish"} listing {linked.code}
                 </Link>
                 {linked.isPublished && (
                   <Link href={`/properties/${linked.slug}`} target="_blank" className="btn btn-ghost w-full">
@@ -197,13 +197,15 @@ export default async function SellerRequestPage({ params, searchParams }: Props)
             ) : (
               <>
                 <p className="text-sm text-muted">
-                  <strong className="text-ink">Approve &amp; publish</strong> puts this property on the website for everyone, with the owner&apos;s
-                  photos. Owner details stay private. <strong className="text-ink">Reject</strong> keeps it off the website.
+                  Only the admin team can see this request. Nothing is posted automatically.{" "}
+                  <strong className="text-ink">Approve &amp; create draft</strong> copies it into a <em>hidden</em> listing that you can edit; it goes on
+                  the website only when you publish it. Owner details always stay private. <strong className="text-ink">Reject</strong> keeps it
+                  off the website.
                 </p>
                 <form action={approveSellerAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <SubmitButton className="btn btn-primary w-full" pendingText="Publishing…">
-                    <CircleCheck className="size-4" /> Approve &amp; publish
+                  <SubmitButton className="btn btn-primary w-full" pendingText="Creating draft…">
+                    <CircleCheck className="size-4" /> Approve &amp; create draft
                   </SubmitButton>
                 </form>
                 {r.status !== "rejected" && (

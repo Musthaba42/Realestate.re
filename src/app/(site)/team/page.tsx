@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeTrail } from "@/components/site/HomeTrail";
 import { db } from "@/lib/db";
 import { TeamCard } from "@/components/site/TeamCard";
 import { SwipeCarousel } from "@/components/site/SwipeCarousel";
@@ -11,8 +12,9 @@ export default async function TeamPage() {
   const team = founderId ? [...all.filter((m) => m.id === founderId), ...all.filter((m) => m.id !== founderId)] : all;
   return (
     <div className="container-x pb-10 pt-6 md:pt-10">
+      <HomeTrail items={[{ label: "Our team" }]} />
       <p className="eyebrow">Our team</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-5xl">The people behind every deal</h1>
+      <h1 className="mt-3 text-[36px] leading-tight md:text-6xl">The people behind every deal</h1>
       <p className="mt-4 max-w-2xl leading-relaxed text-muted">
         From your first call to registration, our team is with you at every step.
       </p>

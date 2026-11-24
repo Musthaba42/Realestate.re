@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeTrail } from "@/components/site/HomeTrail";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CirclePlus, ExternalLink, LogOut, MessageSquareWarning, Pencil } from "@/components/glyphs";
@@ -20,7 +21,7 @@ const STATUS_STYLE: Record<string, string> = {
 const STATUS_TEXT: Record<string, string> = {
   pending: "Waiting for admin review",
   needs_info: "The admin needs more information",
-  approved: "Approved and live on the website",
+  approved: "Approved by our team",
   rejected: "Not approved",
 };
 
@@ -36,6 +37,7 @@ export default async function AccountPage() {
 
   return (
     <div className="container-x max-w-3xl pb-10 pt-6 md:pt-10">
+      <HomeTrail items={[{ label: "My account" }]} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="eyebrow">My account</p>
@@ -86,7 +88,10 @@ export default async function AccountPage() {
                     {labelOf(SELLER_STATUSES, r.status)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm text-muted">{STATUS_TEXT[r.status] ?? ""}</p>
+                <p className="mt-3 text-sm text-muted">
+                  {STATUS_TEXT[r.status] ?? ""}
+                  {r.status === "approved" && (listing?.isPublished ? " · live on the website." : " · our team will publish it shortly.")}
+                </p>
                 {r.ownerMessage && r.status !== "approved" && (
                   <p className="mt-3 flex items-start gap-2 rounded-2xl bg-surface-2 px-4 py-3 text-sm">
                     <MessageSquareWarning className="mt-0.5 size-4 shrink-0 text-warn" />

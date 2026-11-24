@@ -7,9 +7,9 @@ const KEY = "gg_welcome_seen_v1";
 
 const STEPS = [
   { icon: Search, title: "Choose type & area", text: "Select land, house, apartment or commercial and the area you want." },
-  { icon: MapPin, title: "Explore properties", text: "Videos, photos, price, approvals, road, loan and nearby landmarks, all in one page." },
+  { icon: MapPin, title: "Explore properties", text: "Videos, photos, price, approvals, road access and nearby landmarks, all in one page." },
   { icon: Hand, title: "Tap “I am Interested”", text: "Share just your name and phone number. That's it." },
-  { icon: Phone, title: "We call you", text: "Our team arranges the site visit, loan support and documentation." },
+  { icon: Phone, title: "We call you", text: "Our team arranges the site visit, negotiation and documentation." },
 ];
 
 /** "How it works" — shown as a pop-up the first time someone opens the website. */

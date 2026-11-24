@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, Handshake, LogIn, Phone, UserPlus, Users } from "@/components/glyphs";
+import { BadgeCheck, Handshake, LogIn, Pencil, Phone, UserPlus, Users } from "@/components/glyphs";
+import { HomeTrail } from "@/components/site/HomeTrail";
 import { SellForm, type SellInitial } from "@/components/site/SellForm";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -62,18 +63,20 @@ export default async function SellPage({ searchParams }: Props) {
 
   return (
     <div className="container-x pb-10 pt-6 md:pt-10">
+      <HomeTrail items={[{ label: "Sell your property" }]} />
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0">
           <p className="eyebrow">For property owners</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Sell your property with us</h1>
+          <h1 className="mt-3 text-[36px] leading-tight md:text-5xl">Sell your property with us</h1>
           <p className="mb-7 mt-3 max-w-2xl leading-relaxed text-muted">
-            Share the details below. Our team will review and verify your property, and once the admin approves it, it is shown on our
-            website for genuine buyers.
+            Share the details below. Your submission goes <strong className="text-ink">only to our admin team</strong> — nothing is posted on
+            the website automatically. The admin reviews it, may edit the details with you, and publishes it for genuine buyers once
+            everything is ready.
           </p>
 
           {!me && (
             <div className="card max-w-xl p-6 md:p-8">
-              <h2 className="text-xl font-bold">Log in to sell your property</h2>
+              <h2 className="text-2xl">Log in to sell your property</h2>
               <p className="mt-2 leading-relaxed text-muted">
                 You need a free account so we can show you the approval status of your property. Browsing and “I am Interested” never
                 need an account.
@@ -110,7 +113,8 @@ export default async function SellPage({ searchParams }: Props) {
         </div>
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
           {[
-            { icon: BadgeCheck, title: "Admin approval", text: "Our admin checks every submission before it goes live." },
+            { icon: BadgeCheck, title: "Seen only by our admin", text: "Your details reach the admin team only. Nothing is posted automatically." },
+            { icon: Pencil, title: "Reviewed & edited", text: "The admin checks and corrects the details before deciding to publish." },
             { icon: Users, title: "Genuine buyers", text: "Your property reaches buyers searching in your area." },
             { icon: Handshake, title: "End-to-end help", text: "We handle enquiries, site visits and negotiation." },
           ].map(({ icon: Icon, title, text }) => (

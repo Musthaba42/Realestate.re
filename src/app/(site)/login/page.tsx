@@ -19,9 +19,9 @@ export default async function LoginPage({ searchParams }: Props) {
   const signup = `/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   return (
     <AuthShell
-      eyebrow="Welcome back"
+      eyebrow="Property owner login"
       title="Log in"
-      intro="Log in to sell your property and track its approval. Browsing properties never needs an account."
+      intro="Log in to sell your property and follow its review. Browsing properties and “I am Interested” never need an account."
       footer={
         <>
           New here?{" "}

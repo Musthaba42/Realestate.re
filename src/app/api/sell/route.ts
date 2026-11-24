@@ -208,7 +208,7 @@ export async function POST(req: Request) {
     mapsUrl: d.mapsUrl,
     totalSqft: d.totalSqft,
     price: Math.round(d.price),
-    isNegotiable: d.isNegotiable === "yes",
+    isNegotiable: true, // every price is shown as negotiable
     bhk: isResidential ? d.bhk : undefined,
     bathrooms: d.type === "land" ? undefined : d.bathrooms,
     facing: d.facing,
@@ -242,7 +242,7 @@ export async function POST(req: Request) {
     `Type: ${labelOf(PROPERTY_TYPES, d.type)}`,
     `Area: ${d.locality}, ${d.city}`,
     `Size: ${d.totalSqft} sq.ft`,
-    `Expected price: ${formatINR(d.price)} (${d.isNegotiable === "yes" ? "negotiable" : "fixed"})`,
+    `Expected price: ${formatINR(d.price)} (negotiable)`,
     `Name: ${me.name}`,
     `Phone: ${displayPhone(phone)}`,
   ];

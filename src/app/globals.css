@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 /* Design tokens — Golden Groups: kohl black + brushed brass (from the logo).
-   Signature: surveyor's-plan details — dimension-line eyebrows, boundary-stone dots in the glyphs,
-   engraved Marcellus headings and Plex Mono for codes, distances and areas. */
+   Signature: a full-bleed photo hero that turns through the listed properties, with a brass
+   "survey plate" naming the one on screen. Around it: Bodoni headings and prices, Plex Mono for
+   codes, distances and areas, hairline rules instead of boxes. */
 @theme {
-  --color-bg: #0e0d0b;
-  --color-surface: #1a1815;
-  --color-surface-2: #27241f;
-  --color-surface-3: #332f28;
-  --color-line: #3b362d;
-  --color-ink: #fbf8f1;
-  --color-muted: #b5ad9d;
-  --color-faint: #80786a;
+  --color-bg: #0b0a08;
+  --color-surface: #15130f;
+  --color-surface-2: #201d18;
+  --color-surface-3: #2b2720;
+  --color-line: #332e26;
+  --color-ink: #f8f3e9;
+  --color-muted: #b6ad9b;
+  --color-faint: #857d6f;
   --color-gold: #d9ad4b;
   --color-gold-2: #f0cf7a;
   --color-gold-3: #a87b25;
@@ -22,10 +23,10 @@
   --color-info: #6ab7ff;
 
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: var(--font-marcellus), "Times New Roman", serif;
+  --font-display: var(--font-bodoni), "Didot", "Times New Roman", serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", Menlo, monospace;
 
-  --radius-card: 1.75rem;
+  --radius-card: 1.25rem;
 }
 
 :root {
@@ -66,11 +67,17 @@ body {
   --glyph-accent: currentColor;
 }
 
-/* Public site headings are set in the engraved display face (one weight, so no faux bold). */
+/* Public site headings are set in the display face. */
 .site-shell :is(h1, h2) {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.005em;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+@layer base {
+  /* Default weight for display text; a font-* weight utility still wins. */
+  .font-display {
+    font-weight: 500;
+  }
 }
 
 ::selection {
@@ -328,14 +335,53 @@ body {
   }
 
   .section-title {
-    font-size: 1.75rem;
-    line-height: 1.15;
-    font-weight: 400;
+    font-size: 2rem;
+    line-height: 1.06;
   }
   @media (min-width: 768px) {
     .section-title {
-      font-size: 2.375rem;
+      font-size: 3rem;
     }
+  }
+
+  /* Vertical rhythm for home-page sections. */
+  .section {
+    padding-block: 3.5rem;
+  }
+  @media (min-width: 768px) {
+    .section {
+      padding-block: 5.5rem;
+    }
+  }
+
+  /* Hairline rule that fades out at both ends. */
+  .rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-line) 12%, var(--color-line) 88%, transparent);
+  }
+
+  /* Survey-sheet grid, used behind panels and as the "no photo" backdrop. */
+  .survey-grid {
+    background-color: var(--color-surface);
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--color-gold) 9%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-gold) 9%, transparent) 1px, transparent 1px),
+      linear-gradient(color-mix(in srgb, var(--color-gold) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-gold) 4%, transparent) 1px, transparent 1px);
+    background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+    background-position: -1px -1px;
+  }
+
+  /* Dotted leader between a name and its figure (directory / index rows). */
+  .leader {
+    flex: 1;
+    min-width: 1.5rem;
+    height: 1px;
+    align-self: center;
+    background-image: radial-gradient(circle, var(--color-faint) 0.6px, transparent 0.9px);
+    background-size: 5px 1px;
+    background-repeat: repeat-x;
+    opacity: 0.7;
   }
   /* Eyebrow drawn as a surveyor's dimension line:  |—|  LABEL */
   .eyebrow {
@@ -459,6 +505,27 @@ body {
 }
 .animate-fade {
   animation: fade-in 0.18s ease-out;
+}
+
+/* Hero photo: a slow settle while the slide is on screen. */
+@keyframes settle {
+  from {
+    transform: scale(1.07);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.animate-settle {
+  animation: settle 9s ease-out both;
+}
+@keyframes fill-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

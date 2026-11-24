@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Hanken_Grotesk, IBM_Plex_Mono, Marcellus } from "next/font/google";
+import { Bodoni_Moda, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { getSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/format";
 import "./globals.css";
 
-// Marcellus: flared, inscriptional capitals — like an engraved brass name plate. Used for headings only.
-const display = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus", display: "swap" });
+// Bodoni Moda: high-contrast didone with optical sizes — hairline serifs that read like
+// engraved brass at headline size and stay sturdy for prices. Used for headings and prices only.
+const display = Bodoni_Moda({ subsets: ["latin"], axes: ["opsz"], variable: "--font-bodoni", display: "swap" });
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 // Plex Mono: survey-sheet figures — property codes, distances, areas.
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono", display: "swap" });

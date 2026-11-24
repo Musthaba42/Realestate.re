@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Expand, Images, Play, Share2, Video, X } from "@/components/glyphs";
+import { ArrowLeft, ChevronLeft, ChevronRight, Expand, House, Images, Play, Share2, Video, X } from "@/components/glyphs";
 import { PropertyImage } from "@/components/PropertyImage";
 import { Portal } from "@/components/Portal";
 import { SoldStamp } from "@/components/SoldStamp";
@@ -23,6 +23,7 @@ export function PropertyGallery({ items: raw, title, sold = false }: { items: Ga
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const track = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
   const count = items.length;
 
   const scrollTo = useCallback((i: number, smooth = true) => {
@@ -37,6 +38,17 @@ export function PropertyGallery({ items: raw, title, sold = false }: { items: Ga
     const i = Math.round(el.scrollLeft / el.clientWidth);
     if (i !== index && i >= 0 && i < count) setIndex(i);
   }
+
+  // Keep the current thumbnail in view in the right-side rail (without scrolling the page).
+  useEffect(() => {
+    const r = rail.current;
+    const el = r?.children[index] as HTMLElement | undefined;
+    if (!r || !el) return;
+    const top = el.offsetTop - r.offsetTop;
+    if (top < r.scrollTop || top + el.offsetHeight > r.scrollTop + r.clientHeight) {
+      r.scrollTo({ top: top - r.clientHeight / 2 + el.offsetHeight / 2, behavior: "smooth" });
+    }
+  }, [index]);
 
   // Stop a playing video when it is swiped away.
   useEffect(() => {
@@ -75,8 +87,59 @@ export function PropertyGallery({ items: raw, title, sold = false }: { items: Ga
   const isVideo = current.kind !== "image";
   const position = isVideo ? `Video ${index + 1}/${videoCount}` : `Photo ${index - videoCount + 1}/${images.length}`;
 
+  const thumb = (m: GalleryItem, i: number, cls: string) => (
+    <button
+      key={m.url + "thumb" + i}
+      type="button"
+      onClick={() => scrollTo(i)}
+      aria-label={m.kind === "image" ? `Show photo ${i - videoCount + 1}` : `Show video ${i + 1}`}
+      aria-current={i === index}
+      className={`relative shrink-0 overflow-hidden rounded-2xl border-2 bg-black transition ${cls} ${
+        i === index ? "border-gold" : "border-transparent opacity-65 hover:opacity-100"
+      }`}
+    >
+      {m.kind === "image" ? (
+        <PropertyImage src={m.url} alt="" width={300} className="size-full object-cover" />
+      ) : m.kind === "youtube" && youtubeId(m.url) ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`https://i.ytimg.com/vi/${youtubeId(m.url)}/mqdefault.jpg`} alt="" className="size-full object-cover" />
+      ) : (
+        <video src={`${m.url}#t=0.1`} className="size-full object-cover" preload="metadata" muted playsInline tabIndex={-1} />
+      )}
+      {m.kind !== "image" && (
+        <span className="absolute inset-0 grid place-items-center bg-black/35">
+          <span className="grid size-8 place-items-center rounded-full bg-gold text-on-gold">
+            <Play className="size-3.5 fill-current" />
+          </span>
+        </span>
+      )}
+    </button>
+  );
+
+  /** Jump buttons: "Videos 2" / "Photos 8". */
+  const jumps = videoCount > 0 && images.length > 0 && (
+    <div className="flex gap-1.5" role="group" aria-label="Jump to">
+      <button
+        type="button"
+        onClick={() => scrollTo(0)}
+        className={`chip h-8 px-3 text-xs ${isVideo ? "chip-active" : ""}`}
+        aria-pressed={isVideo}
+      >
+        <Video className="size-3.5" /> Videos <span className="font-mono">{videoCount}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => scrollTo(videoCount)}
+        className={`chip h-8 px-3 text-xs ${!isVideo ? "chip-active" : ""}`}
+        aria-pressed={!isVideo}
+      >
+        <Images className="size-3.5" /> Photos <span className="font-mono">{images.length}</span>
+      </button>
+    </div>
+  );
+
   return (
-    <div>
+    <div className={count > 1 ? "lg:grid lg:grid-cols-[minmax(0,1fr)_128px] lg:gap-3 xl:grid-cols-[minmax(0,1fr)_148px]" : ""}>
       <div className="relative overflow-hidden rounded-[28px] bg-black">
         <div ref={track} onScroll={onScroll} className="no-scrollbar flex aspect-[4/3.2] snap-x snap-mandatory overflow-x-auto md:aspect-[16/10]">
           {items.map((m, i) => (
@@ -115,9 +178,14 @@ export function PropertyGallery({ items: raw, title, sold = false }: { items: Ga
 
         {sold && <SoldStamp size="lg" />}
         <div className="pointer-events-none absolute inset-x-3 top-3 z-[2] flex justify-between">
-          <Link href="/properties" className="icon-btn pointer-events-auto" aria-label="Back to properties">
-            <ArrowLeft className="size-[18px]" />
-          </Link>
+          <div className="pointer-events-auto flex gap-2">
+            <Link href="/properties" className="icon-btn" aria-label="Back to properties" title="Back to properties">
+              <ArrowLeft className="size-[18px]" />
+            </Link>
+            <Link href="/" className="icon-btn" aria-label="Home page" title="Home page">
+              <House className="size-[18px]" />
+            </Link>
+          </div>
           <div className="pointer-events-auto flex gap-2">
             <button type="button" className="icon-btn" onClick={share} aria-label="Share this property">
               <Share2 className="size-[18px]" />
@@ -179,36 +247,33 @@ export function PropertyGallery({ items: raw, title, sold = false }: { items: Ga
       </div>
 
       {count > 1 && (
-        <div className="no-scrollbar mt-2.5 flex gap-2.5 overflow-x-auto" aria-label="Videos and photos">
-          {items.map((m, i) => (
-            <button
-              key={m.url + "thumb" + i}
-              type="button"
-              onClick={() => scrollTo(i)}
-              aria-label={m.kind === "image" ? `Show photo ${i - videoCount + 1}` : `Show video ${i + 1}`}
-              aria-current={i === index}
-              className={`relative h-[70px] w-[100px] shrink-0 overflow-hidden rounded-2xl border-2 bg-black transition md:h-[84px] md:w-[124px] ${
-                i === index ? "border-gold" : "border-transparent opacity-70 hover:opacity-100"
-              }`}
-            >
-              {m.kind === "image" ? (
-                <PropertyImage src={m.url} alt="" width={300} className="size-full object-cover" />
-              ) : m.kind === "youtube" && youtubeId(m.url) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={`https://i.ytimg.com/vi/${youtubeId(m.url)}/mqdefault.jpg`} alt="" className="size-full object-cover" />
-              ) : (
-                <video src={`${m.url}#t=0.1`} className="size-full object-cover" preload="metadata" muted playsInline tabIndex={-1} />
-              )}
-              {m.kind !== "image" && (
-                <span className="absolute inset-0 grid place-items-center bg-black/35">
-                  <span className="grid size-8 place-items-center rounded-full bg-gold text-on-gold">
-                    <Play className="size-3.5 fill-current" />
+        <>
+          {/* Right-side rail (desktop): every video and photo of this property, in slider order */}
+          <div className="relative hidden lg:block">
+            <div className="absolute inset-0 flex flex-col overflow-hidden rounded-[22px] border border-line/70 bg-surface">
+              <p className="border-b border-line/70 px-3 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                {videoCount > 0 && (
+                  <span className="text-gold-2">
+                    {videoCount} video{videoCount === 1 ? "" : "s"}
                   </span>
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+                )}
+                {videoCount > 0 && images.length > 0 && " · "}
+                {images.length > 0 && `${images.length} photo${images.length === 1 ? "" : "s"}`}
+              </p>
+              <div ref={rail} className="no-scrollbar relative flex flex-1 flex-col gap-2 overflow-y-auto p-2" aria-label="Videos and photos">
+                {items.map((m, i) => thumb(m, i, "aspect-[4/3] w-full"))}
+              </div>
+            </div>
+          </div>
+
+          {/* Phones and tablets: jump buttons and a strip under the slider */}
+          <div className="mt-2.5 lg:hidden">
+            {jumps && <div className="mb-2.5">{jumps}</div>}
+            <div className="no-scrollbar flex gap-2.5 overflow-x-auto" aria-label="Videos and photos">
+              {items.map((m, i) => thumb(m, i, "h-[70px] w-[100px] md:h-[84px] md:w-[124px]"))}
+            </div>
+          </div>
+        </>
       )}
 
       {lightbox !== null && images.length > 0 && (

@@ -9,24 +9,16 @@ import {
   Building,
   Car,
   Compass,
-  Briefcase,
   FileText,
   Flag,
-  GraduationCap,
   HardHat,
-  Hospital,
   Layers,
   MapPin,
   Maximize,
   Navigation,
-  Plane,
   Route,
   Ruler,
   ShieldCheck,
-  ShoppingBag,
-  Temple,
-  Train,
-  Wallet,
 } from "@/components/glyphs";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
@@ -35,7 +27,6 @@ import {
   CONSTRUCTION_STAGES,
   FACINGS,
   LANDMARK_KINDS,
-  LOAN_DISCLAIMER,
   OPEN_STATUSES,
   PROPERTY_TYPES,
   RESIDENTIAL_TYPES,
@@ -44,6 +35,7 @@ import {
 } from "@/lib/constants";
 import {
   formatINR,
+  formatKm,
   formatNumber,
   formatPriceShort,
   mapsSearchLink,
@@ -52,6 +44,8 @@ import {
   whatsappLink,
 } from "@/lib/format";
 import { PropertyGallery } from "@/components/site/PropertyGallery";
+import { LANDMARK_ICON } from "@/components/landmark-icons";
+import { HomeTrail } from "@/components/site/HomeTrail";
 import { PropertyActions } from "@/components/site/PropertyActions";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PropertyCard } from "@/components/PropertyCard";
@@ -59,21 +53,7 @@ import { searchProperties } from "@/lib/properties";
 
 type Props = { params: Promise<{ slug: string }> };
 
-const LANDMARK_ICON: Record<string, React.ElementType> = {
-  transport: Train,
-  highway: Route,
-  airport: Plane,
-  school: GraduationCap,
-  hospital: Hospital,
-  temple: Temple,
-  shopping: ShoppingBag,
-  office: Briefcase,
-  other: Flag,
-};
 
-function formatKm(km: number): string {
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km % 1 === 0 ? km : km.toFixed(1)} km`;
-}
 
 async function getProperty(slug: string) {
   return db.property.findFirst({
@@ -108,8 +88,9 @@ export default async function PropertyPage({ params }: Props) {
   if (!p) notFound();
 
   const gallery = p.media
-    .filter((m) => m.kind === "image" || m.kind === "video" || m.kind === "youtube")
-    .map((m) => ({ kind: m.kind as "image" | "video" | "youtube", url: m.url }));
+    // Photos and uploaded videos only (YouTube links are no longer shown).
+    .filter((m) => m.kind === "image" || m.kind === "video")
+    .map((m) => ({ kind: m.kind as "image" | "video", url: m.url }));
   const landmarks = p.landmarks ?? [];
   const isResidential = RESIDENTIAL_TYPES.includes(p.type);
   const perSqft = pricePerSqft(p.price, p.totalSqft);
@@ -117,8 +98,6 @@ export default async function PropertyPage({ params }: Props) {
   const showConstruction =
     p.constructionStage != null && p.constructionStage !== "" && !(p.type === "land" && p.constructionStage === "not_started");
   const percent = Math.max(0, Math.min(100, p.constructionPercent ?? (p.constructionStage === "completed" ? 100 : 0)));
-  const loanPercent = p.loanPercent ?? s.loanMaxPercent;
-  const estLoan = p.loanAvailable ? Math.round((p.price * loanPercent) / 100) : 0;
   const mapHref =
     p.showExactLocation && p.mapsUrl ? p.mapsUrl : mapsSearchLink(`${p.locality}, ${p.city}${p.pincode ? " " + p.pincode : ""}`);
   const roadLabel = p.roadType ? (p.roadType === "other" ? p.roadNote || "—" : labelOf(ROAD_TYPES, p.roadType)) : null;
@@ -133,7 +112,7 @@ export default async function PropertyPage({ params }: Props) {
 
   const waText = `Hi, I am interested in this property.\nProperty: ${p.title} – ${p.locality} (ID: ${p.code})\nPrice: ${formatINR(
     p.price,
-  )}`;
+  )} (negotiable)`;
 
   const tiles: { icon: React.ElementType; label: string; value: string }[] = [
     { icon: Building, label: "Property type", value: p.subType || labelOf(PROPERTY_TYPES, p.type) },
@@ -177,19 +156,13 @@ export default async function PropertyPage({ params }: Props) {
       <div>
         <p className="font-display text-[38px] leading-none text-foil">{formatINR(p.price)}</p>
         <p className="mt-2.5 flex flex-wrap items-center gap-2 text-sm text-muted">
-          {p.isNegotiable && (
-            <span className="rounded-md border border-gold/50 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-gold-2">
-              Negotiable price
-            </span>
-          )}
+          {/* Every price is open to negotiation. */}
+          <span className="rounded-md border border-gold/50 bg-gold/10 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-gold-2">
+            Negotiable price
+          </span>
           {perSqft && <span className="font-mono text-[13px]">{formatINR(perSqft)}/sq.ft</span>}
         </p>
       </div>
-      {p.loanAvailable && (
-        <p className="flex items-center gap-2 text-sm text-muted">
-          <Wallet className="size-4 shrink-0 text-accent" /> Bank loan available · up to {loanPercent}%*
-        </p>
-      )}
       <div className="flex flex-wrap gap-1.5">
         {p.bhk != null && (
           <span className="spec">
@@ -215,6 +188,7 @@ export default async function PropertyPage({ params }: Props) {
 
   return (
     <div className="container-x pb-28 pt-4 md:pt-8 lg:pb-10">
+      <HomeTrail items={[{ href: "/properties", label: "Properties" }, { label: p.title }]} className="hidden md:block" />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-10">
         {/* LEFT */}
         <div className="min-w-0 space-y-6">
@@ -326,42 +300,6 @@ export default async function PropertyPage({ params }: Props) {
             </section>
           </div>
 
-          <section className="card p-5" aria-labelledby="loan">
-            <div className="flex items-center gap-2">
-              <Wallet className="size-5" />
-              <h2 id="loan" className="text-xl">
-                Bank loan
-              </h2>
-            </div>
-            {p.loanAvailable ? (
-              <>
-                <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-surface-2 p-3">
-                    <p className="text-[11px] text-muted">Financing support</p>
-                    <p className="font-semibold">Up to {loanPercent}%*</p>
-                  </div>
-                  <div className="rounded-2xl bg-surface-2 p-3">
-                    <p className="text-[11px] text-muted">Approx. loan amount</p>
-                    <p className="font-semibold">{formatPriceShort(estLoan)}</p>
-                  </div>
-                  <div className="col-span-2 rounded-2xl bg-surface-2 p-3 sm:col-span-1">
-                    <p className="text-[11px] text-muted">Your contribution (approx.)</p>
-                    <p className="font-semibold">{formatPriceShort(p.price - estLoan)}</p>
-                  </div>
-                </div>
-                {p.loanBanks && <p className="mt-3 text-sm text-muted">Banks: {p.loanBanks}</p>}
-                <Link href={`/loan?property=${p.slug}`} className="btn btn-ghost btn-sm mt-4">
-                  Check loan options <ArrowRight className="size-4" />
-                </Link>
-                <p className="mt-4 text-xs leading-relaxed text-faint">* {LOAN_DISCLAIMER}</p>
-              </>
-            ) : (
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                Bank loan is not listed for this property. Contact us to discuss financing options.
-              </p>
-            )}
-          </section>
-
           <section className="card p-5" aria-labelledby="location">
             <div className="flex items-center gap-2">
               <MapPin className="size-5" />
@@ -383,31 +321,61 @@ export default async function PropertyPage({ params }: Props) {
             </a>
           </section>
 
-          {(landmarks.length > 0 || sameArea > 0) && (
-            <section className="card p-5 md:p-6" aria-labelledby="locality">
-              <p className="eyebrow">Explore the locality</p>
-              <h2 id="locality" className="mt-2 text-2xl">
+          {/* EXPLORE THE LOCALITY — the area and the distance to the big landmarks around it */}
+          <section className="overflow-hidden rounded-card border border-line/70 bg-surface" aria-labelledby="locality">
+            <div className="survey-grid border-b border-line/70 p-5 md:p-6">
+              <p className="eyebrow">Explore locality</p>
+              <h2 id="locality" className="mt-2 text-2xl md:text-3xl">
                 Around {p.locality}
               </h2>
-              {landmarks.length > 0 && (
-                <ol className="mt-5 divide-y divide-line/60">
-                  {landmarks.map((l, i) => {
-                    const Icon = LANDMARK_ICON[l.kind] ?? Flag;
-                    return (
-                      <li key={l.name + i} className="flex items-center gap-3.5 py-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-gold-2">
-                          <Icon className="size-[18px]" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold">{l.name}</p>
-                          <p className="text-xs text-muted">{labelOf(LANDMARK_KINDS, l.kind)}</p>
-                        </div>
-                        <span className="dim-line hidden w-16 sm:block" aria-hidden="true" />
-                        <span className="shrink-0 font-mono text-sm text-gold-2">{formatKm(l.distanceKm)}</span>
-                      </li>
-                    );
-                  })}
+              <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line/70 bg-line/70 sm:grid-cols-3">
+                <div className="bg-bg/90 p-3.5">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">Available area</dt>
+                  <dd className="mt-1 truncate font-semibold">{p.locality}</dd>
+                </div>
+                <div className="bg-bg/90 p-3.5">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">City</dt>
+                  <dd className="mt-1 truncate font-semibold">
+                    {p.city}
+                    {p.pincode ? <span className="font-mono text-xs text-muted"> · {p.pincode}</span> : null}
+                  </dd>
+                </div>
+                <div className="col-span-2 bg-bg/90 p-3.5 sm:col-span-1">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">For sale here</dt>
+                  <dd className="mt-1 font-semibold text-gold-2">
+                    {sameArea + (isOpen ? 1 : 0)} {sameArea + (isOpen ? 1 : 0) === 1 ? "property" : "properties"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="p-5 md:p-6">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold">Big landmarks · distance</h3>
+              {landmarks.length > 0 ? (
+                <ol className="mt-3 divide-y divide-line/60">
+                  {[...landmarks]
+                    .sort((x, y) => x.distanceKm - y.distanceKm)
+                    .map((l, i) => {
+                      const Icon = LANDMARK_ICON[l.kind] ?? Flag;
+                      return (
+                        <li key={l.name + i} className="flex items-center gap-3.5 py-3">
+                          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-gold-2">
+                            <Icon className="size-[18px]" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{l.name}</p>
+                            <p className="text-xs text-muted">{labelOf(LANDMARK_KINDS, l.kind)}</p>
+                          </div>
+                          <span className="leader" aria-hidden="true" />
+                          <span className="shrink-0 font-mono text-sm text-gold-2">{formatKm(l.distanceKm)}</span>
+                        </li>
+                      );
+                    })}
                 </ol>
+              ) : (
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  Ask our team about schools, hospitals, transport and markets near this property — we share exact distances on call.
+                </p>
               )}
               {sameArea > 0 && (
                 <Link
@@ -424,8 +392,8 @@ export default async function PropertyPage({ params }: Props) {
                 </Link>
               )}
               {landmarks.length > 0 && <p className="mt-3 text-xs text-faint">Distances are approximate.</p>}
-            </section>
-          )}
+            </div>
+          </section>
         </div>
 
         {/* RIGHT (desktop) */}

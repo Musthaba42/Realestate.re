@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Plus, Trash, Video, X } from "@/components/glyphs";
+import { Plus, Trash } from "@/components/glyphs";
+import { MediaTray, type TrayItem } from "@/components/MediaTray";
 import type { Property } from "@prisma/client";
 import { savePropertyAction, type FormState } from "@/app/admin/actions";
 import { uploadPropertyFiles } from "@/lib/client-image";
@@ -194,7 +195,7 @@ function LandmarkEditor({ initial }: { initial: { name: string; kind: string; di
   );
 }
 
-type Picked = { file: File; preview: string };
+type Picked = TrayItem;
 
 /** Photo/video picker used when adding a new property (uploaded right after saving). */
 function NewMediaPicker({ items, setItems }: { items: Picked[]; setItems: React.Dispatch<React.SetStateAction<Picked[]>> }) {
@@ -203,42 +204,18 @@ function NewMediaPicker({ items, setItems }: { items: Picked[]; setItems: React.
     <section className="card p-5 md:p-6">
       <h2 className="font-bold">Photos & videos</h2>
       <p className="mt-0.5 text-sm text-muted">
-        The first photo becomes the cover. On the property page the video plays first, then the photos. Photos are resized automatically; you can add more, reorder and set the cover later.
+        Change anything before saving: reorder with the arrows, ↻ replaces a file, ★ makes a photo the cover. On the property page the
+        videos play first, then the photos, in one slider. Photos are resized automatically.
       </p>
-      <div className="mt-5 grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-        {items.map((it, i) => (
-          <div key={it.preview} className="relative aspect-square overflow-hidden rounded-2xl bg-surface-2">
-            {it.file.type.startsWith("video/") ? (
-              <div className="grid size-full place-items-center text-xs text-muted">
-                <Video className="size-6" />
-              </div>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={it.preview} alt={`Selected ${i + 1}`} className="size-full object-cover" />
-            )}
-            {i === 0 && !it.file.type.startsWith("video/") && <span className="badge absolute bottom-1.5 left-1.5 text-warn">Cover</span>}
-            <button
-              type="button"
-              className="icon-btn absolute right-1.5 top-1.5 size-7"
-              aria-label={`Remove ${it.file.name}`}
-              onClick={() => {
-                URL.revokeObjectURL(it.preview);
-                setItems((prev) => prev.filter((x) => x !== it));
-              }}
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          className="grid aspect-square place-items-center rounded-2xl border-2 border-dashed border-line text-muted transition-colors hover:border-faint hover:text-ink"
-        >
-          <span className="grid justify-items-center gap-1 text-xs font-medium">
-            <ImagePlus className="size-6" /> Add photos
-          </span>
-        </button>
+      <div className="mt-5">
+        <MediaTray
+          items={items}
+          setItems={setItems}
+          onAdd={() => input.current?.click()}
+          canAdd={items.length < 30}
+          addLabel="Add photos / videos"
+          accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+        />
       </div>
       <input
         ref={input}
@@ -319,7 +296,8 @@ export function PropertyForm({ property }: { property?: Property | null }) {
         </label>
       </Card>
 
-      <Card title="Price" desc="One price for the property (no price range). Tick “Negotiable” to show that the price is open to discussion.">
+      <Card title="Price" desc="One price for the property (no price range). Every price is shown on the website as “Negotiable price”.">
+        <input type="hidden" name="isNegotiable" value="on" />
         <label className="block">
           <span className="label">Price (₹) *</span>
           <input
@@ -336,9 +314,7 @@ export function PropertyForm({ property }: { property?: Property | null }) {
             {per ? ` · ${formatINR(per)}/sq.ft (auto)` : ""}
           </span>
         </label>
-        <div className="self-end">
-          <Check label="Negotiable" name="isNegotiable" defaultChecked={p ? p.isNegotiable : true} hint="Shows “Negotiable price” next to the price" />
-        </div>
+        <p className="self-end rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold-2">Shown as: Negotiable price</p>
       </Card>
 
       <Card title="Size">
@@ -399,14 +375,6 @@ export function PropertyForm({ property }: { property?: Property | null }) {
           />
         </Card>
       )}
-
-      <Card title="Bank loan">
-        <div className="sm:col-span-2">
-          <Check label="Bank loan available" name="loanAvailable" defaultChecked={p ? p.loanAvailable : true} />
-        </div>
-        <Field label="Banks" name="loanBanks" defaultValue={p?.loanBanks} placeholder="e.g. SBI, HDFC, ICICI" />
-        <Field label="Financing up to (%)" name="loanPercent" type="number" defaultValue={p?.loanPercent} hint="Leave empty to use the default from Settings" />
-      </Card>
 
       <Card title="Location">
         <Field label="Area / locality" name="locality" defaultValue={p?.locality} required />

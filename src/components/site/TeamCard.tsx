@@ -3,8 +3,13 @@ import type { TeamMember } from "@prisma/client";
 import { initials, telLink, whatsappLink } from "@/lib/format";
 import { WhatsAppIcon } from "@/components/icons";
 
-/** `featured` = the founder: gold name and a black-on-gold position tag. */
-export function TeamCard({ m, featured = false }: { m: TeamMember; featured?: boolean }) {
+/**
+ * `featured` = the founder (Founder label and a gold frame).
+ * `gilded`   = name set in gold and the position as a black-on-gold tag (used on the About page);
+ *              the founder is always gilded.
+ */
+export function TeamCard({ m, featured = false, gilded = false }: { m: TeamMember; featured?: boolean; gilded?: boolean }) {
+  const gold = featured || gilded;
   return (
     <article className={`card flex h-full flex-col p-2 ${featured ? "border-gold/45" : ""}`}>
       <div className="relative aspect-[4/4.2] overflow-hidden rounded-[22px] bg-surface-2">
@@ -18,10 +23,10 @@ export function TeamCard({ m, featured = false }: { m: TeamMember; featured?: bo
         )}
       </div>
       <div className="flex flex-1 flex-col px-3 pb-3 pt-4">
-        {featured ? (
+        {gold ? (
           <>
-            <p className="eyebrow">Founder</p>
-            <h3 className="mt-2 font-display text-[26px] leading-tight text-foil">{m.name}</h3>
+            {featured && <p className="eyebrow mb-2">Founder</p>}
+            <h3 className="font-display text-[26px] font-semibold leading-tight text-foil">{m.name}</h3>
             <p className="plaque mt-3 self-start leading-snug">{m.role}</p>
           </>
         ) : (
